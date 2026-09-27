@@ -1,0 +1,16 @@
+{
+  "name": "passwortpeter",
+  "version": "0.4.0",
+  "private": true,
+  "description": "Ein Passwortmanager als einzige HTML-Datei, ohne Server, ohne Konto, ohne Netzzugriff.",
+  "scripts": {
+    "test": "node test/test_vault.js",
+    "build": "python3 build.py",
+    "test:build": "node test/test_dom.js",
+    "verify": "npm run test && npm run build && npm run test:build"
+  },
+  "devDependencies": {
+    "libsodium-wrappers-sumo": "0.7.15",
+    "jsdom": "25.0.1"
+  }
+}

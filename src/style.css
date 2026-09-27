@@ -1,0 +1,880 @@
+/* PasswortPeter – Gestaltung
+ *
+ * Bild: ein Karteikasten. Jede Seite ist eine Karte, jede Kategorie ein farbiger
+ * Reiter, der gesperrte Tresor ist der geschlossene Kasten. Zugesperrt ist dunkel
+ * und still, aufgesperrt ist hell und voll.
+ *
+ * Schrift: System für Fließtext, dickengleich für alles, was man abtippen oder
+ * vorlesen muss. In einer dickengleichen Schrift sind 0 und O sowie 1, l und I
+ * auseinanderzuhalten. Das ist hier kein Geschmack, sondern Zweck.
+ *
+ * Keine Webfonts, keine externen Bilder, kein Netzzugriff. Die Datei muss auf
+ * einem Stick ohne Internet vollständig funktionieren.
+ */
+
+:root {
+  --tinte:      #131E1A;
+  --tinte-2:    #1C2B26;
+  --tinte-3:    #2B3D36;
+  --stahl:      #5D6B65;
+  --stahl-hell: #8B9791;
+  --papier:     #E8EBE5;
+  --karte:      #FCFCFA;
+  --linie:      #D5D9D1;
+  --linie-fein: #E6E9E2;
+  --messing:      #9A6E24;
+  --messing-hell: #D4A340;
+  --rot:        #9B3B2E;
+  --rot-hell:   #E8837A;
+  --gruen:      #3E6B4B;
+
+  --kat-rost:     #B0603A;
+  --kat-moos:     #4F6B4A;
+  --kat-tinte:    #34506B;
+  --kat-messing:  #A8792C;
+  --kat-pflaume:  #6E4459;
+  --kat-schiefer: #556069;
+  --kat-ziegel:   #8C3F3F;
+  --kat-salbei:   #708C6A;
+
+  --ui:   system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --data: ui-monospace, SFMono-Regular, "SF Mono", Menlo, "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+
+  --rund: 3px;
+  --schatten: 0 1px 2px rgba(19, 30, 26, .06), 0 4px 12px rgba(19, 30, 26, .05);
+  --schatten-hoch: 0 8px 40px rgba(19, 30, 26, .28);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  background: var(--tinte);
+}
+
+body {
+  font-family: var(--ui);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--tinte);
+  -webkit-text-size-adjust: 100%;
+  overflow: hidden;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: none; }
+
+:focus-visible {
+  outline: 2px solid var(--messing-hell);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.versteckt { display: none !important; }
+
+.nur-lesen {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ══════════════════════════════════════════ Der geschlossene Kasten */
+
+.kasten {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 2rem 1.25rem;
+  background:
+    radial-gradient(120% 90% at 50% 0%, var(--tinte-3) 0%, var(--tinte) 62%);
+  color: var(--papier);
+  overflow-y: auto;
+}
+
+.kasten__mitte {
+  width: 100%; max-width: 380px;
+  text-align: center;
+}
+
+.kasten__siegel {
+  width: 88px; height: 88px;
+  margin: 0 auto 1.5rem;
+  filter: drop-shadow(0 6px 24px rgba(0, 0, 0, .4));
+}
+.kasten__siegel svg { width: 100%; height: 100%; display: block; }
+
+.kasten__name {
+  font-family: var(--data);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  margin: 0 0 .35rem;
+  color: var(--papier);
+  word-break: break-word;
+}
+
+.kasten__zeile {
+  margin: 0 0 2rem;
+  font-size: .82rem;
+  color: var(--stahl-hell);
+}
+
+.kasten__marke {
+  font-family: var(--data);
+  font-size: .7rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--messing);
+  margin: 0 0 2.75rem;
+}
+
+.kasten__fuss {
+  margin-top: 2.5rem;
+  font-size: .74rem;
+  line-height: 1.65;
+  color: #4E5C56;
+  max-width: 340px;
+  margin-left: auto; margin-right: auto;
+}
+
+/* Felder auf dunklem Grund */
+
+.feld { text-align: left; margin-bottom: 1rem; }
+
+.feld__name {
+  display: block;
+  font-size: .72rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--stahl-hell);
+  margin-bottom: .4rem;
+  font-weight: 600;
+}
+
+.dunkel-eingabe {
+  width: 100%;
+  padding: .8rem .9rem;
+  background: rgba(0, 0, 0, .3);
+  border: 1px solid var(--tinte-3);
+  border-radius: var(--rund);
+  color: var(--papier);
+  font-family: var(--data);
+  transition: border-color .15s;
+}
+.dunkel-eingabe::placeholder { color: #4E5C56; }
+.dunkel-eingabe:focus { border-color: var(--messing); outline: none; }
+.dunkel-eingabe:disabled { opacity: .5; }
+
+/* Knöpfe */
+
+.knopf {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: .45rem;
+  padding: .8rem 1.1rem;
+  border-radius: var(--rund);
+  font-weight: 600;
+  font-size: .9rem;
+  transition: background-color .15s, opacity .15s, color .15s;
+  white-space: nowrap;
+}
+.knopf:disabled { opacity: .45; cursor: default; }
+
+.knopf--voll {
+  width: 100%;
+  background: var(--messing);
+  color: #14100A;
+}
+.knopf--voll:hover:not(:disabled) { background: var(--messing-hell); }
+
+.knopf--leer {
+  background: transparent;
+  border: 1px solid var(--tinte-3);
+  color: var(--papier);
+  width: 100%;
+}
+.knopf--leer:hover:not(:disabled) { border-color: var(--stahl); background: rgba(255, 255, 255, .04); }
+
+.knopf--text {
+  padding: .5rem .4rem;
+  color: var(--stahl-hell);
+  font-weight: 500;
+  font-size: .8rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--tinte-3);
+}
+.knopf--text:hover { color: var(--papier); }
+
+.knopf-reihe { display: grid; gap: .6rem; margin-top: 1.25rem; }
+
+/* Meldung auf dunklem Grund */
+
+.warnung {
+  margin-top: 1rem;
+  padding: .7rem .85rem;
+  border-radius: var(--rund);
+  background: rgba(155, 59, 46, .18);
+  border: 1px solid rgba(232, 131, 122, .3);
+  color: var(--rot-hell);
+  font-size: .82rem;
+  text-align: left;
+}
+
+.hinweis-dunkel {
+  margin-top: 1rem;
+  padding: .7rem .85rem;
+  border-radius: var(--rund);
+  background: rgba(212, 163, 64, .1);
+  border: 1px solid rgba(212, 163, 64, .25);
+  color: var(--messing-hell);
+  font-size: .8rem;
+  text-align: left;
+  line-height: 1.55;
+}
+
+/* Ablegefeld für die Datei */
+
+.ablage {
+  border: 1px dashed var(--tinte-3);
+  border-radius: var(--rund);
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--stahl);
+  font-size: .85rem;
+  transition: border-color .15s, background-color .15s, color .15s;
+  cursor: pointer;
+}
+.ablage:hover, .ablage--bereit {
+  border-color: var(--messing);
+  background: rgba(212, 163, 64, .06);
+  color: var(--messing-hell);
+}
+
+/* Der Riegel: zeigt, dass Argon2id gerade rechnet */
+
+.riegel {
+  height: 2px;
+  background: var(--tinte-3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 1.25rem;
+}
+.riegel__lauf {
+  height: 100%; width: 40%;
+  background: var(--messing-hell);
+  animation: riegel 1.1s ease-in-out infinite;
+}
+@keyframes riegel {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+/* ══════════════════════════════════════════ Der offene Kasten */
+
+.raum {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  background: var(--papier);
+}
+
+.leiste {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .6rem .9rem;
+  background: var(--tinte);
+  color: var(--papier);
+  flex-shrink: 0;
+}
+
+.leiste__siegel { width: 30px; height: 30px; flex-shrink: 0; }
+.leiste__siegel svg { width: 100%; height: 100%; display: block; }
+
+.leiste__name {
+  font-family: var(--data);
+  font-weight: 600;
+  font-size: .9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 22ch;
+}
+
+.leiste__luft { flex: 1; }
+
+.leiste__punkt {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--messing-hell);
+  flex-shrink: 0;
+}
+.leiste__punkt--rein { background: var(--gruen); }
+
+.suche {
+  flex: 1;
+  max-width: 340px;
+  padding: .45rem .7rem;
+  background: var(--tinte-2);
+  border: 1px solid var(--tinte-3);
+  border-radius: var(--rund);
+  color: var(--papier);
+  font-size: .85rem;
+}
+.suche::placeholder { color: var(--stahl); }
+.suche:focus { border-color: var(--messing); outline: none; }
+
+.leiste__knopf {
+  padding: .45rem .7rem;
+  border-radius: var(--rund);
+  color: var(--stahl-hell);
+  font-size: .8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.leiste__knopf:hover { background: var(--tinte-2); color: var(--papier); }
+.leiste__knopf--wichtig { background: var(--messing); color: #14100A; }
+.leiste__knopf--wichtig:hover { background: var(--messing-hell); color: #14100A; }
+
+.inhalt { flex: 1; display: flex; min-height: 0; }
+
+/* Reiter, also die Kategorien */
+
+.reiter {
+  width: 208px;
+  flex-shrink: 0;
+  padding: 1rem .6rem 1rem 1rem;
+  overflow-y: auto;
+  border-right: 1px solid var(--linie);
+}
+
+.reiter__gruppe { margin-bottom: 1.5rem; }
+
+.reiter__kopf {
+  font-size: .66rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--stahl);
+  font-weight: 700;
+  margin: 0 0 .5rem .5rem;
+}
+
+.reiter__eintrag {
+  display: flex; align-items: center; gap: .55rem;
+  width: 100%;
+  padding: .42rem .5rem;
+  border-radius: var(--rund);
+  text-align: left;
+  font-size: .85rem;
+  color: var(--tinte-2);
+  border-left: 3px solid transparent;
+  transition: background-color .12s;
+}
+.reiter__eintrag:hover { background: rgba(19, 30, 26, .05); }
+.reiter__eintrag--aktiv {
+  background: rgba(19, 30, 26, .07);
+  border-left-color: var(--f, var(--stahl));
+  font-weight: 600;
+}
+
+.reiter__farbe {
+  width: 9px; height: 9px;
+  border-radius: 2px;
+  background: var(--f, var(--stahl));
+  flex-shrink: 0;
+}
+
+.reiter__text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.reiter__zahl {
+  font-family: var(--data);
+  font-size: .72rem;
+  color: var(--stahl);
+}
+
+/* Die Kartei */
+
+.kartei {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1rem 5rem;
+  min-width: 0;
+}
+
+.kartei__gitter {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  gap: .6rem;
+  max-width: 1180px;
+}
+
+.karte {
+  position: relative;
+  display: flex; align-items: center; gap: .7rem;
+  padding: .7rem .7rem .7rem 1rem;
+  background: var(--karte);
+  border: 1px solid var(--linie);
+  border-radius: var(--rund);
+  box-shadow: var(--schatten);
+  text-align: left;
+  width: 100%;
+  transition: border-color .12s, transform .12s, box-shadow .12s;
+  overflow: hidden;
+}
+.karte:hover {
+  border-color: var(--stahl-hell);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(19, 30, 26, .07), 0 8px 20px rgba(19, 30, 26, .07);
+}
+
+/* Der Reiter am Kartenrand. Das Kennzeichen des Karteikastens. */
+.karte::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--f, transparent);
+}
+
+.karte__siegel { width: 38px; height: 38px; flex-shrink: 0; }
+.karte__siegel svg { width: 100%; height: 100%; display: block; }
+
+.karte__text { flex: 1; min-width: 0; }
+
+.karte__titel {
+  margin: 0;
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--tinte);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.karte__unten {
+  margin: .12rem 0 0;
+  font-family: var(--data);
+  font-size: .72rem;
+  color: var(--stahl);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.karte__tun { display: flex; gap: .15rem; flex-shrink: 0; }
+
+.tun {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border-radius: var(--rund);
+  color: var(--stahl);
+  transition: background-color .12s, color .12s;
+}
+.tun:hover { background: var(--papier); color: var(--tinte); }
+.tun svg { width: 16px; height: 16px; display: block; }
+
+.stern { color: var(--messing-hell); }
+
+.leer {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--stahl);
+  font-size: .88rem;
+  line-height: 1.7;
+}
+.leer strong { display: block; color: var(--tinte-2); font-size: 1rem; margin-bottom: .4rem; }
+
+/* Knopf zum Anlegen, unten rechts */
+
+.plus {
+  position: fixed;
+  right: 1.25rem; bottom: 1.25rem;
+  height: 46px;
+  padding: 0 1.15rem;
+  display: inline-flex; align-items: center; gap: .45rem;
+  background: var(--tinte);
+  color: var(--papier);
+  border-radius: 23px;
+  font-weight: 600;
+  font-size: .87rem;
+  box-shadow: var(--schatten-hoch);
+  z-index: 20;
+}
+.plus:hover { background: var(--tinte-2); }
+.plus svg { width: 15px; height: 15px; }
+
+/* ══════════════════════════════════════════ Blatt für Details */
+
+.vorhang {
+  position: fixed; inset: 0;
+  background: rgba(19, 30, 26, .5);
+  z-index: 40;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 2.5rem 1rem;
+  overflow-y: auto;
+}
+
+.blatt {
+  width: 100%; max-width: 470px;
+  background: var(--karte);
+  border-radius: 5px;
+  box-shadow: var(--schatten-hoch);
+  overflow: hidden;
+}
+
+.blatt__kopf {
+  display: flex; align-items: center; gap: .7rem;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid var(--linie);
+}
+.blatt__siegel { width: 34px; height: 34px; flex-shrink: 0; }
+.blatt__siegel svg { width: 100%; height: 100%; display: block; }
+.blatt__titel { flex: 1; margin: 0; font-size: 1rem; font-weight: 600; word-break: break-word; }
+.blatt__zu {
+  width: 30px; height: 30px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: var(--rund);
+  color: var(--stahl); font-size: 1.2rem; line-height: 1;
+}
+.blatt__zu:hover { background: var(--papier); color: var(--tinte); }
+
+.blatt__leib { padding: 1.1rem; }
+.blatt__fuss {
+  display: flex; gap: .5rem;
+  padding: .85rem 1.1rem;
+  border-top: 1px solid var(--linie);
+  background: #F6F7F3;
+}
+.blatt__fuss .knopf { flex: 1; width: auto; }
+
+/* Helle Felder */
+
+.hell-feld { margin-bottom: .9rem; }
+.hell-feld:last-child { margin-bottom: 0; }
+
+.hell-feld__name {
+  display: block;
+  font-size: .68rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--stahl);
+  font-weight: 700;
+  margin-bottom: .3rem;
+}
+
+.hell-eingabe {
+  width: 100%;
+  padding: .55rem .65rem;
+  background: #fff;
+  border: 1px solid var(--linie);
+  border-radius: var(--rund);
+  font-family: var(--data);
+  font-size: .85rem;
+}
+.hell-eingabe:focus { border-color: var(--messing); outline: none; }
+textarea.hell-eingabe { resize: vertical; min-height: 68px; font-family: var(--ui); }
+
+select.hell-eingabe { font-family: var(--ui); cursor: pointer; }
+
+.mit-knopf { display: flex; gap: .3rem; }
+.mit-knopf .hell-eingabe { flex: 1; min-width: 0; }
+.mit-knopf .tun {
+  border: 1px solid var(--linie);
+  background: #fff;
+  width: 34px; height: auto;
+  flex-shrink: 0;
+}
+.mit-knopf .tun:hover { background: var(--papier); }
+
+/* Anzeige eines Wertes zum Ablesen */
+
+.wert {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .5rem .65rem;
+  background: #F6F7F3;
+  border: 1px solid var(--linie-fein);
+  border-radius: var(--rund);
+}
+.wert__text {
+  flex: 1; min-width: 0;
+  font-family: var(--data);
+  font-size: .85rem;
+  word-break: break-all;
+}
+.wert__text--leer { color: var(--stahl); font-family: var(--ui); font-style: italic; }
+.wert__punkte { letter-spacing: .1em; }
+
+/* Stärkebalken */
+
+.staerke { margin-top: .45rem; }
+.staerke__spur {
+  height: 3px; background: var(--linie);
+  border-radius: 2px; overflow: hidden;
+  display: flex; gap: 2px;
+}
+.staerke__teil { flex: 1; background: var(--linie); border-radius: 2px; transition: background-color .2s; }
+.staerke__teil--an { background: var(--f, var(--stahl)); }
+.staerke__wort {
+  margin-top: .3rem;
+  font-size: .72rem;
+  color: var(--stahl);
+  display: flex; justify-content: space-between;
+  font-family: var(--data);
+}
+.staerke--dunkel .staerke__spur { background: var(--tinte-3); }
+.staerke--dunkel .staerke__teil { background: var(--tinte-3); }
+.staerke--dunkel .staerke__wort { color: var(--stahl); }
+
+/* Kurze Rückmeldung unten */
+
+.zuruf {
+  position: fixed;
+  left: 50%; bottom: 1.25rem;
+  transform: translateX(-50%);
+  background: var(--tinte);
+  color: var(--papier);
+  padding: .6rem 1rem;
+  border-radius: 20px;
+  font-size: .82rem;
+  box-shadow: var(--schatten-hoch);
+  z-index: 60;
+  pointer-events: none;
+  max-width: calc(100vw - 2rem);
+  text-align: center;
+}
+.zuruf--warn { background: var(--rot); }
+
+/* ══════════════════════════════════════════ Handy */
+
+@media (max-width: 720px) {
+  .reiter {
+    position: static;
+    width: 100%;
+    display: flex; gap: .35rem;
+    padding: .6rem .8rem;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--linie);
+    -webkit-overflow-scrolling: touch;
+  }
+  .reiter__gruppe { margin: 0; display: flex; gap: .35rem; }
+  .reiter__kopf { display: none; }
+  .reiter__eintrag {
+    width: auto;
+    white-space: nowrap;
+    border: 1px solid var(--linie);
+    border-left-width: 3px;
+    border-left-color: var(--f, var(--linie));
+    background: var(--karte);
+    padding: .35rem .7rem;
+    font-size: .8rem;
+  }
+  .reiter__eintrag--aktiv { background: var(--tinte); color: var(--papier); border-color: var(--tinte); border-left-color: var(--f, var(--messing-hell)); }
+  .reiter__eintrag--aktiv .reiter__zahl { color: var(--stahl-hell); }
+  .reiter__farbe { display: none; }
+  .inhalt { flex-direction: column; }
+  .kartei__gitter { grid-template-columns: 1fr; }
+  .leiste { flex-wrap: wrap; }
+  .suche { order: 10; max-width: none; flex-basis: 100%; }
+  .leiste__name { max-width: 12ch; }
+  .vorhang { padding: 0; align-items: stretch; }
+  .blatt { max-width: none; border-radius: 0; min-height: 100%; display: flex; flex-direction: column; }
+  .blatt__leib { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .riegel__lauf { width: 100%; }
+}
+
+/* Beim Drucken: normalerweise nichts. Ein Tresor gehört nicht auf Papier.
+   Ausnahme ist der Notfallzettel, der bewusst gedruckt wird und nie ein
+   Passwort enthält. */
+@media print {
+  body:not(.drucke-nz) * { visibility: hidden !important; }
+  body:not(.drucke-nz)::after {
+    content: 'PasswortPeter druckt keine Tresore.';
+    visibility: visible;
+    position: fixed; inset: 0;
+    display: grid; place-items: center;
+    background: #fff; color: #000;
+    font-family: var(--ui);
+  }
+  body.drucke-nz {
+    background: #fff !important;
+    overflow: visible !important;
+  }
+  body.drucke-nz > *:not(#druck-halter) { display: none !important; }
+  body.drucke-nz #druck-halter { display: block !important; }
+}
+
+/* ══════════════════════════════════════════ v0.3: neue Bauteile */
+
+/* Marke am Kassensturz und Papierkorb */
+.muellmarke {
+  min-width: 18px; height: 18px; padding: 0 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--rot); color: #fff;
+  border-radius: 9px; font-size: .68rem; font-weight: 700;
+  font-family: var(--data);
+}
+
+/* Zuruf mit Zurückhol-Knopf */
+.zuruf--tat { display: flex; align-items: center; gap: .8rem; }
+.zuruf__zurueck {
+  color: var(--messing-hell); font-weight: 700; font-size: .82rem;
+  text-decoration: underline; text-underline-offset: 3px;
+  pointer-events: auto;
+}
+
+/* Papierkorb-Ansicht */
+.papierkorb-kopf {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; padding: .2rem .2rem 1rem;
+  color: var(--stahl); font-size: .85rem;
+}
+.karte--muell { opacity: .82; }
+.karte--muell .karte__titel { text-decoration: line-through; text-decoration-color: var(--stahl); }
+.karte--muell::before { background: var(--rot); }
+
+/* Kassensturz */
+.kassensturz-kopf {
+  display: flex; align-items: center; gap: 1.1rem;
+  padding: .2rem 0 1.25rem; margin-bottom: 1rem;
+  border-bottom: 1px solid var(--linie);
+}
+.kassensturz-note {
+  width: 66px; height: 66px; flex-shrink: 0;
+  border-radius: 50%;
+  border: 3px solid var(--f, var(--gruen));
+  display: flex; align-items: baseline; justify-content: center;
+  color: var(--f, var(--gruen));
+  font-family: var(--data); font-weight: 700;
+}
+.kassensturz-zahl { font-size: 1.5rem; }
+.kassensturz-proz { font-size: .8rem; }
+.kassensturz-titel { margin: 0; font-weight: 700; font-size: 1rem; }
+.kassensturz-unter { margin: .15rem 0 0; font-size: .82rem; color: var(--stahl); }
+
+.kassensturz-gut {
+  text-align: center; padding: 1.5rem 1rem; color: var(--stahl); font-size: .9rem; line-height: 1.6;
+}
+.kassensturz-gut__zeichen { width: 54px; height: 54px; margin: 0 auto .75rem; }
+.kassensturz-gut__zeichen svg { width: 100%; height: 100%; }
+
+.kassensturz-block { margin-bottom: 1.4rem; }
+.kassensturz-block__kopf { display: flex; align-items: center; gap: .5rem; margin-bottom: .55rem; }
+.kassensturz-block__punkt { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.kassensturz-block__titel { font-weight: 700; font-size: .9rem; }
+.kassensturz-block__unter { color: var(--stahl); font-size: .8rem; }
+.kassensturz-gruppe {
+  border-left: 2px solid var(--linie);
+  margin: 0 0 .5rem .3rem; padding-left: .5rem;
+}
+.kassensturz-reihe {
+  display: flex; align-items: center; gap: .6rem;
+  width: 100%; padding: .45rem .5rem;
+  border-radius: var(--rund); text-align: left;
+  transition: background-color .12s;
+}
+.kassensturz-reihe:hover { background: var(--papier); }
+.kassensturz-reihe__siegel { width: 26px; height: 26px; flex-shrink: 0; }
+.kassensturz-reihe__siegel svg { width: 100%; height: 100%; }
+.kassensturz-reihe__titel { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .87rem; }
+.kassensturz-reihe__extra { font-family: var(--data); font-size: .74rem; color: var(--stahl); flex-shrink: 0; }
+.kassensturz-fuss { margin: .4rem 0 0; font-size: .77rem; color: var(--stahl); line-height: 1.55; }
+
+/* Import */
+.ablage-hell {
+  border: 1px dashed var(--linie);
+  border-radius: var(--rund);
+  padding: 1.6rem 1rem; text-align: center;
+  color: var(--stahl); font-size: .88rem; cursor: pointer;
+  transition: border-color .15s, background-color .15s, color .15s;
+}
+.ablage-hell:hover, .ablage-hell--bereit {
+  border-color: var(--messing); background: rgba(212, 163, 64, .06); color: var(--messing);
+}
+.import-stand { margin-top: 1rem; }
+.import-vorschau { text-align: center; }
+.import-vorschau__zahl { margin: 0; font-family: var(--data); font-size: 2rem; font-weight: 700; color: var(--tinte); }
+.import-vorschau__text { margin: 0 0 .8rem; color: var(--stahl); font-size: .85rem; }
+.import-vorschau__liste {
+  list-style: none; margin: 0 auto; padding: .7rem 0; max-width: 260px;
+  border-top: 1px solid var(--linie-fein); border-bottom: 1px solid var(--linie-fein);
+  font-size: .84rem; color: var(--tinte-2); text-align: left;
+}
+.import-vorschau__liste li { padding: .12rem 0; }
+
+/* Menü in der Leiste */
+.menue__leib { padding: .5rem; }
+.menue__eintrag {
+  display: block; width: 100%; text-align: left;
+  padding: .7rem .8rem; border-radius: var(--rund);
+  font-size: .9rem; color: var(--tinte-2);
+  transition: background-color .12s;
+}
+.menue__eintrag:hover { background: var(--papier); }
+.menue__eintrag--rot { color: var(--rot); }
+
+/* Warnung auf hellem Grund */
+.warnung-hell {
+  padding: .8rem .9rem; border-radius: var(--rund);
+  background: rgba(155, 59, 46, .07);
+  border: 1px solid rgba(155, 59, 46, .25);
+  color: var(--rot); font-size: .84rem; line-height: 1.55;
+}
+.warnung-hell strong { display: block; margin-bottom: .3rem; }
+
+@media (max-width: 720px) {
+  .kassensturz-reihe__extra { display: none; }
+  .leiste__knopf { padding: .45rem .55rem; }
+}
+
+/* ══════════════════════════════════════════ v0.4: neue Bauteile */
+
+/* Dublettenwarnung im Editor */
+.dublette-warnung {
+  margin: .5rem 0 0;
+  padding: .45rem .6rem;
+  background: rgba(229, 181, 103, .12);
+  border-left: 3px solid var(--messing);
+  border-radius: 2px;
+  font-size: .78rem;
+  color: var(--messing);
+  line-height: 1.45;
+}
+
+/* Notfallzettel: am Bildschirm versteckt, nur im Druck sichtbar */
+#druck-halter { display: none; }
+
+.nz-blatt {
+  max-width: 18cm;
+  margin: 0 auto;
+  padding: 1.5cm 1.6cm;
+  color: #16110a;
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.5;
+}
+.nz-kopf { display: flex; align-items: center; gap: 1rem; border-bottom: 2px solid #16110a; padding-bottom: .8rem; margin-bottom: 1.2rem; }
+.nz-siegel { width: 54px; height: 54px; flex-shrink: 0; }
+.nz-siegel svg { width: 100%; height: 100%; }
+.nz-titel { margin: 0; font-size: 1.7rem; letter-spacing: .01em; }
+.nz-unter { margin: .1rem 0 0; font-size: .9rem; color: #6a5c48; }
+.nz-abschnitt { margin-bottom: 1.3rem; }
+.nz-zeile { display: flex; gap: .6rem; padding: .28rem 0; border-bottom: 1px dotted #cbb994; }
+.nz-label { flex: 0 0 5.5cm; font-weight: 700; }
+.nz-wert { flex: 1; }
+.nz-h { font-weight: 700; margin: 0 0 .4rem; }
+.nz-schritte { margin: 0; padding-left: 1.3rem; }
+.nz-schritte li { margin-bottom: .3rem; }
+.nz-passwortkasten {
+  border: 2px solid #16110a; border-radius: 4px;
+  padding: 1rem 1.1rem 1.4rem; margin: 1.3rem 0;
+}
+.nz-passwortkasten__label { margin: 0 0 1rem; font-weight: 700; }
+.nz-linie { border-bottom: 1.5px solid #16110a; height: 0; margin: 1.1rem 0; }
+.nz-warnung {
+  border: 2px solid #9B3B2E; border-radius: 4px;
+  background: #f7ece9; color: #7a2e24;
+  padding: .8rem 1rem; font-weight: 700; margin: 1.2rem 0;
+}
+.nz-fuss { font-size: .82rem; color: #6a5c48; border-top: 1px solid #cbb994; padding-top: .7rem; }
+
+@media print {
+  @page { margin: 1.2cm; }
+  .nz-blatt { padding: 0; max-width: none; }
+}

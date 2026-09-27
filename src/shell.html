@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>PasswortPeter</title>
+
+<!-- Diese Zeile ist der Beweis, nicht das Versprechen.
+     connect-src 'none' verbietet dem Browser jeden Netzzugriff aus dieser Datei
+     heraus. Selbst wenn im Code unten ein Fehler steckte, könnte nichts hinaus.
+     'unsafe-eval' und 'wasm-unsafe-eval' braucht libsodium für sein WebAssembly.
+     Falls die Datei in einem Browser gar nicht startet: diese eine Zeile
+     entfernen und melden. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+
+<style>
+/* @@CSS@@ */
+</style>
+</head>
+<body>
+
+<!-- Ladeschirm, bis libsodium sein WebAssembly gestartet hat -->
+<section id="laedt" class="kasten">
+  <div class="kasten__mitte">
+    <p class="kasten__marke">PasswortPeter</p>
+    <div class="riegel"><div class="riegel__lauf"></div></div>
+    <p class="kasten__zeile" style="margin-top:1.25rem">Startet …</p>
+    <noscript>
+      <div class="warnung">Ohne JavaScript geht hier nichts. Die ganze Verschlüsselung läuft im Browser.</div>
+    </noscript>
+  </div>
+</section>
+
+<!-- Start -->
+<section id="s-start" class="kasten versteckt">
+  <div class="kasten__mitte">
+    <div id="start-siegel-halter"></div>
+    <h1 class="kasten__name">PasswortPeter</h1>
+    <p class="kasten__zeile">Ein Tresor ist eine Datei. Mehr braucht es nicht.</p>
+
+    <div id="ablage" class="ablage" role="button" tabindex="0">
+      Tresordatei hierher ziehen<br><span style="font-size:.78rem;opacity:.75">oder klicken zum Auswählen</span>
+    </div>
+    <input id="b-datei" type="file" accept=".peter,application/octet-stream" class="nur-lesen" tabindex="-1">
+
+    <div class="knopf-reihe">
+      <button id="b-neuer-tresor" class="knopf knopf--leer">Neuen Tresor anlegen</button>
+    </div>
+
+    <div id="start-fehler" class="warnung versteckt" role="alert"></div>
+
+    <p class="kasten__fuss">
+      Nichts wird hochgeladen, nichts gespeichert, nichts nachgeladen.
+      Diese Datei funktioniert auf einem Stick ohne Internet genauso.
+      Was du siehst, liegt allein in diesem Fenster.
+    </p>
+  </div>
+</section>
+
+<!-- Neuer Tresor -->
+<section id="s-neu" class="kasten versteckt">
+  <div id="neu-mitte" class="kasten__mitte"></div>
+</section>
+
+<!-- Aufsperren -->
+<section id="s-auf" class="kasten versteckt">
+  <div id="auf-mitte" class="kasten__mitte"></div>
+</section>
+
+<!-- Die Kartei -->
+<section id="s-app" class="raum versteckt">
+  <header class="leiste">
+    <div id="leiste-siegel-halter"></div>
+    <span id="leiste-name" class="leiste__name"></span>
+    <span id="leiste-punkt" class="leiste__punkt" title="Ungespeicherte Änderungen"></span>
+    <span class="leiste__luft"></span>
+    <input id="suche" class="suche" type="search" placeholder="Suchen …  (/ oder Strg+K)" autocomplete="off" aria-label="Kartei durchsuchen">
+    <button id="b-sortieren" class="leiste__knopf" title="Sortierung umschalten">A–Z</button>
+    <button id="b-speichern" class="leiste__knopf leiste__knopf--wichtig">Speichern</button>
+    <button id="b-menue" class="leiste__knopf" title="Mehr" aria-label="Menü">···</button>
+    <button id="b-sperren" class="leiste__knopf">Zusperren</button>
+  </header>
+  <div class="inhalt">
+    <nav id="reiter" class="reiter" aria-label="Reiter"></nav>
+    <main class="kartei">
+      <div id="gitter" class="kartei__gitter"></div>
+    </main>
+  </div>
+  <button id="b-neu-eintrag" class="plus">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    Neue Karte
+  </button>
+</section>
+
+<div id="vorhang-halter"></div>
+<div id="zuruf-halter"></div>
+<div id="druck-halter" aria-hidden="true"></div>
+
+<script>
+/* @@SODIUM@@ */
+</script>
+<script>
+/* @@WRAPPERS@@ */
+</script>
+<script>
+/* @@VAULT@@ */
+</script>
+<script>
+/* @@SEAL@@ */
+</script>
+<script>
+/* @@APP@@ */
+</script>
+</body>
+</html>

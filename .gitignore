@@ -1,0 +1,16 @@
+# Abhängigkeiten zum Testen (werden per npm install neu geholt)
+node_modules/
+
+# Nie versehentlich eine echte Tresordatei oder einen Klartext-Export einchecken.
+# Das ist eine Sicherheitsnetz-Regel, keine Formsache: dieses Repository ist nur
+# für den Quellcode gedacht, niemals für echte Zugangsdaten.
+*.peter
+*_KLARTEXT.csv
+*_KLARTEXT.csv.txt
+
+# System- und Editor-Kram
+.DS_Store
+Thumbs.db
+*.swp
+__pycache__/
+*.pyc
