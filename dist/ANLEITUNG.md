@@ -1,6 +1,7 @@
-# PasswortPeter
+# PasswortPeter 1.0
 
-Eine einzige Datei. Kein Konto, kein Internet, keine Anmeldung irgendwo.
+Deine Websites und Passwörter. In einer Datei.
+Kein Konto, kein Internet, keine Anmeldung irgendwo.
 
 ---
 
@@ -17,8 +18,13 @@ Zufall, mit dem niemand etwas anfangen kann.
 
 1. **PasswortPeter.html** doppelklicken. Der Browser geht auf.
 2. **Neuen Tresor anlegen** wählen, Namen und Master-Passwort eingeben.
-3. Der Tresor wird sofort heruntergeladen. Die Datei liegt jetzt bei euren
-   Downloads. Legt sie dorthin, wo ihr sie haben wollt.
+   Tipp: **Merksatz vorschlagen** macht ein starkes Passwort aus Wörtern, das
+   man sich merken kann.
+3. Der Tresor wird sofort gespeichert. Am Computer mit Chrome oder Edge fragt
+   der Browser einmal, wohin; sonst liegt die Datei bei euren Downloads.
+
+Oben rechts auf dem Startschirm stellt ihr **DE / EN** um. Im Tresor selbst
+gilt die Sprache aus den Einstellungen.
 
 ## Jeden Tag
 
@@ -27,49 +33,157 @@ Zufall, mit dem niemand etwas anfangen kann.
 3. Master-Passwort eingeben. Das Aufsperren dauert ein bis vier Sekunden.
    Das ist Absicht: dieselbe Wartezeit bremst jeden, der das Passwort raten will.
 
-## Speichern
+Nach drei falschen Versuchen wartet Peter kurz (5, 10, 20, dann 30 Sekunden),
+bevor er den nächsten annimmt.
 
-Ein Klick auf **Speichern** lädt eine neue `.peter`-Datei herunter.
-Die alte ersetzen, fertig.
+## Die Übersicht
 
-> Der Punkt neben dem Tresornamen ist **grün**, wenn alles gespeichert ist,
-> und **gold**, wenn es Änderungen gibt. Der Speichern-Knopf bekommt dann
-> einen Stern.
+Nach dem Aufsperren siehst du die **Übersicht**:
 
-Solange nicht gespeichert ist, existieren die Änderungen nur in diesem Fenster.
-Fenster zu heißt: weg.
+- oben die Kennzahlen: wie viele Karten, wie viele mit Passwort, wie viele
+  Lesezeichen, und die **Sicherheit** in Prozent,
+- darunter eure **Favoriten als große Kacheln**, wie eine Startseite,
+- **Zuletzt geöffnet**, und alle **Reiter** zum Antippen.
+
+Links (am Handy hinter ☰) ist die Navigation: Alle Karten, Favoriten,
+Zuletzt geöffnet, eure Reiter, Schlagwörter und das Werkzeug.
 
 ## Karten
 
-Jede Seite ist eine Karte. Eine Karte braucht nur einen Titel oder eine Adresse.
+Jede Website ist eine Karte. Eine Karte braucht nur einen Titel oder eine Adresse.
 
 - **Mit Benutzer und Passwort** ist es ein Zugang.
 - **Ohne Benutzer und Passwort** ist es einfach ein Lesezeichen.
 
-Beides steht nebeneinander im selben Kasten, sortiert nach Reitern.
+Was eine Karte sonst noch kann (alles freiwillig):
+
+| Feld | Wofür |
+|---|---|
+| **Emoji und Farbe** | Ein eigenes Symbol, etwa 🏦 für die Bank. Ohne Emoji zeichnet Peter ein Siegel aus dem Namen der Seite. |
+| **Weitere Adressen** | Wenn eine Seite mehrere hat, etwa Online-Banking und App-Login. |
+| **Reiter** | Die Schublade, in der die Karte liegt (Banken, Schule, …). |
+| **Schlagwörter** | Quer zu den Reitern, mit Komma getrennt: `Familie, Wichtig`. In der Suche mit `#`: `#familie`. |
+| **Weitere Angaben** | PIN, Kundennummer, Sicherheitsfrage … Ein Feld kann **verborgen** sein, dann steht es als Punkte da und wird von der Suche übergangen. |
+| **Favorit** | Die Karte erscheint groß in der Übersicht. |
 
 ## Die Knöpfe auf einer Karte
 
 | Zeichen | Was passiert |
 |---|---|
-| Kugel | Die Website geht in einem neuen Tab auf |
+| Pfeil aus dem Kasten | Die Website geht in einem neuen Tab auf |
+| Person | Der Benutzername geht in die Zwischenablage |
 | Schlüssel | Das Passwort geht in die Zwischenablage und löscht sich nach 20 Sekunden wieder |
-| Stern | Die Karte wandert nach oben zu den Favoriten |
+| Stern | Favorit an oder aus |
 
-Ein Klick auf die Karte selbst öffnet alle Angaben.
+Ein Klick auf die Karte selbst öffnet alle Angaben. Dort gibt es für jedes Feld
+ein Auge (zeigen) und einen Kopier-Knopf.
+
+Oben über der Liste: **A–Z** schaltet die Sortierung um (A–Z, zuletzt benutzt,
+neueste, **eigene Reihenfolge**), daneben **Kacheln oder Liste**, und
+**Auswählen** für mehrere Karten auf einmal.
+
+## Eigene Reihenfolge
+
+Sortierung auf **Eigene Reihenfolge** stellen. Dann lassen sich Karten am
+Computer mit der Maus ziehen, und jede Karte hat zwei kleine Pfeile zum
+Verschieben (auch am Handy und mit der Tastatur). Die Reihenfolge wird mit
+dem Tresor gespeichert. Die Favoriten in der Übersicht folgen ihr auch.
+
+## Mehrere Karten auf einmal
+
+**Auswählen** antippen, dann die Karten antippen. Unten erscheint eine Leiste:
+in einen Reiter verschieben, ein Schlagwort anhängen, als Favorit merken oder
+löschen. **Fertig** oder `Esc` beendet die Auswahl.
+
+## Passwort ändern und der Verlauf
+
+Wenn du bei einer Karte ein neues Passwort einträgst, bleibt das alte im
+**Verlauf** der Karte erhalten (die letzten zehn). Praktisch, wenn eine Seite
+nach der Änderung doch noch das alte will. Im Detail unter „Frühere Passwörter".
+
+Neue Passwörter würfelst du im Editor: Würfel (Zufall), Feder (Merksatz) oder
+Regler (Generator mit Länge und Zeichenarten).
+
+## Sicherheit
+
+Links unter Werkzeug. Peter prüft alle Passwörter im Tresor:
+
+- **Mehrfach benutzt**: dasselbe Passwort bei mehreren Seiten,
+- **Schwach**: rechnerisch leicht zu erraten,
+- **Veraltet**: seit über 12 Monaten nicht geändert (einstellbar),
+- **Ohne https**: die Adresse beginnt mit `http://`.
+
+Ein Tipp auf eine Zeile öffnet die Karte zum Bearbeiten. Die rote Zahl links
+zeigt, wie viele Passwörter Aufmerksamkeit brauchen.
+
+Geprüft wird nur der Tresor selbst. Einen Abgleich mit Leck-Listen im Internet
+gibt es bewusst nicht: dafür müsste die Datei ins Netz, und das tut sie nie.
+
+## Speichern
+
+**Speichern** oben rechts wird farbig und bekommt einen Punkt, sobald es Änderungen gibt.
+Links unter dem Tresornamen steht „Ungespeicherte Änderungen" oder
+„Alles gespeichert".
+
+- **Chrome, Edge, Opera am Computer:** beim ersten Speichern einmal fragen,
+  wohin, danach immer genau diese Datei überschreiben.
+- **Firefox und Handys:** jedes Speichern lädt eine neue Datei herunter. Die alte
+  ersetzen, fertig.
+
+Solange nicht gespeichert ist, existieren die Änderungen nur in diesem Fenster.
+Fenster zu heißt: weg.
+
+## Sicherungskopie
+
+Im Menü (···) → **Sicherungskopie herunterladen**. Das ist dieselbe
+verschlüsselte Datei mit Datum im Namen, etwa `Familie_Sicherung_2026-09-27.peter`.
+Leg sie an einen **zweiten Ort**, am besten einen USB-Stick in der Schublade.
+
+Peter erinnert in der Übersicht daran, wenn die letzte Sicherung länger als
+30 Tage her ist (einstellbar, auch abschaltbar).
+
+## Lesezeichen für den Browser
+
+Im Menü → **Lesezeichen exportieren (ohne Passwörter)**. Das ergibt eine
+HTML-Datei, die jeder Browser importiert (Firefox: Lesezeichen → Importieren;
+Chrome: Lesezeichen-Manager → Importieren). Reiter werden Ordner. Benutzer,
+Passwörter, Notizen und Zusatzfelder sind **nicht** darin.
+
+## Import
+
+Links unter Werkzeug. Zugänge aus einem anderen Programm (Bitwarden, KeePass,
+Chrome, Firefox und andere als CSV) oder Browser-Lesezeichen als HTML. Peter
+zeigt vorher, was er gefunden hat, und überspringt Dubletten.
+
+## Einstellungen
+
+Im Menü (···) → **Einstellungen**. Sie gelten für den ganzen Tresor, egal auf
+welchem Gerät er geöffnet wird:
+
+- **Sprache** (Deutsch, English) und **Erscheinungsbild** (wie das System, hell, dunkel),
+- **Standardansicht** (Kacheln oder Liste),
+- **Von selbst zusperren** nach 1, 5, 15, 30 Minuten oder nie,
+- **Stärke der Schlüsselableitung**: auf einem älteren Handy „Sparsam", wenn das
+  Aufsperren zu lange dauert; wer es besonders sicher will, „Streng",
+- **Passwort gilt als veraltet** nach 6, 12, 24 Monaten oder nie,
+- **An Sicherungskopie erinnern** nach 7, 30, 90 Tagen oder nie.
 
 ## Tastatur
 
 | Taste | Was |
 |---|---|
+| `/` oder `Strg` + `K` | Suchen |
+| `Enter` in der Suche | Zur ersten Karte springen |
 | `Strg` + `S` | Speichern |
 | `Strg` + `L` | Zusperren |
-| `Esc` | Fenster schließen |
+| `Strg` + `Enter` im Editor | Übernehmen |
+| `Esc` | Fenster schließen, Suche leeren, Auswahl beenden |
 
 ## Der Tresor sperrt von selbst zu
 
-Nach fünf Minuten ohne Bewegung. Gibt es dann ungespeicherte Änderungen,
-fragt Peter erst nach und wartet 90 Sekunden.
+Nach fünf Minuten ohne Bewegung (einstellbar), im Hintergrund (anderer Tab)
+schon nach 45 Sekunden, sofern nichts Ungespeichertes wartet. Gibt es dann ungespeicherte Änderungen, fragt Peter erst nach und
+wartet 90 Sekunden.
 
 ## Einen Tresor weitergeben
 
@@ -86,73 +200,26 @@ Nicht in derselben Mail. Nicht im selben Chat.
 keine Hintertür. Das war eine bewusste Entscheidung: es gibt niemanden, der
 euren Tresor öffnen könnte, also auch keinen, der dazu gezwungen werden kann.
 
-Zwei Dinge folgen daraus:
+Drei Dinge folgen daraus:
 
-1. **Master-Passwort auf Papier.** Dorthin, wo auch die Geburtsurkunden liegen.
-2. **Die `.peter`-Datei sichern.** Auf einen Stick, in eine Cloud, egal wohin.
-   Die Datei ist verschlüsselt, sie darf überall liegen. Datei weg heißt
-   Passwörter weg, und daran ändert auch das beste Master-Passwort nichts.
+1. **Notfallzettel drucken.** Im Menü → „Notfallzettel drucken". Ein Zettel mit
+   Tresorname, Ablageort der Datei und einer Anleitung für den Ernstfall, aber
+   **ohne** Passwort. Das Master-Passwort trägst du mit der Hand ein und legst
+   den Zettel zu euren Dokumenten.
+2. **Master-Passwort auf Papier.** Genau auf diesem Zettel.
+3. **Die `.peter`-Datei sichern.** Siehe Sicherungskopie. Die Datei ist
+   verschlüsselt, sie darf überall liegen. Datei weg heißt Passwörter weg, und
+   daran ändert auch das beste Master-Passwort nichts.
 
 Ein Backup ist keine Hintertür. Es ist die einzige Versicherung, die es hier gibt.
 
----
+> **Der Export als Klartext-CSV** (im Menü, rot) ist ein Notausgang für den
+> Wechsel zu einem anderen Programm. Diese Datei ist **nicht** verschlüsselt und
+> gehört sofort nach Gebrauch gelöscht.
 
-## Neu ab v0.3
+## Ältere Versionen
 
-**Speichern in dieselbe Datei.** Auf Chrome, Edge und Opera am Computer fragt Peter
-beim ersten Speichern einmal, wohin, und überschreibt danach immer genau diese
-Datei. Kein `Familie (10).peter` mehr. Firefox und Handys laden weiter herunter,
-das ist technisch nicht anders lösbar.
-
-**Kassensturz.** Im Werkzeug links. Zeigt, welche Passwörter mehrfach benutzt oder
-zu schwach sind, und führt mit einem Tipp direkt zur Karte, wo du mit dem
-Würfel-Knopf ein neues erzeugst. Der grüne Haken heißt: alles sauber.
-
-**Import.** Ebenfalls im Werkzeug. Hol deine Zugänge aus einem anderen Programm
-(Bitwarden, KeePass, Chrome, Firefox und andere als CSV) oder deine Lesezeichen
-als HTML-Export herein. Peter zeigt vorher, was er gefunden hat, und überspringt
-Dubletten. Nichts verlässt dabei das Fenster.
-
-**Papierkorb.** Gelöschte Karten sind nicht sofort weg, sondern landen im
-Papierkorb und lassen sich zurückholen. Direkt nach dem Löschen genügt der
-Zurückholen-Knopf im kurzen Hinweis unten.
-
-**Master-Passwort ändern.** Im Menü (···) oben rechts. Gilt ab dem nächsten
-Speichern. Auch hierfür gibt es keine Wiederherstellung.
-
-**Kleinigkeiten.** Benutzernamen lassen sich jetzt direkt von der Karte kopieren.
-Mit `/` oder `Strg`+`K` springst du ins Suchfeld. Der Knopf links neben Speichern
-schaltet die Sortierung um: A–Z, zuletzt benutzt, neueste zuerst.
-
-> **Der Export als CSV** (im Menü) ist ein Notausgang für den Wechsel zu einem
-> anderen Programm. Diese Datei ist **nicht** verschlüsselt und gehört sofort nach
-> Gebrauch gelöscht.
-
----
-
-## Neu ab v0.4
-
-**Notfallzettel.** Im Menü (···) → „Notfallzettel drucken". Das ist die wichtigste
-Absicherung überhaupt. Peter druckt einen Zettel mit dem Tresornamen, wo die Datei
-liegt und einer Anleitung für den Ernstfall — aber **ohne** Passwort. Das Master-
-Passwort trägst du mit der Hand ein und legst den Zettel zu euren Dokumenten. Falls
-dir etwas zustößt, finden Frau und Tochter darüber den Weg in den Tresor.
-
-**Merksatz.** Beim Anlegen eines Tresors und beim Würfeln eines Passworts gibt es
-jetzt neben dem Zufallspasswort einen „Merksatz": mehrere zufällige Wörter, die man
-sich leichter merkt und die trotzdem stark sind. Gedacht vor allem fürs Master-
-Passwort, das einzige, das du dir merken musst.
-
-**Einstellungen.** Im Menü. Zwei Regler: nach wie vielen Minuten der Tresor von
-selbst zusperrt, und wie stark die Verschlüsselung rechnet. Auf einem älteren Handy
-stell „Sparsam" ein, wenn das Aufsperren zu lange dauert; wer es besonders sicher
-will, nimmt „Streng".
-
-**Warnung bei doppelten Passwörtern.** Wenn du beim Bearbeiten ein Passwort eintippst,
-das du schon woanders benutzt, sagt Peter dir sofort, wo.
-
-**Reiter sortieren.** Unter „Reiter verwalten" kannst du die Reihenfolge mit den
-Pfeilen ändern.
-
-**Kleinigkeiten.** Im Hintergrund (anderer Tab) sperrt der Tresor schneller zu.
-In Dialogen bleibt die Tab-Taste sauber im Fenster.
+Ein Tresor aus v0.2 bis v0.4 öffnet sich in 1.0 ohne Umweg. Umgekehrt öffnet
+sich ein 1.0-Tresor auch in v0.4, aber **wer ihn dort speichert, verliert die
+neuen Angaben** (Schlagwörter, weitere Adressen, Zusatzfelder, Verlauf, Emoji,
+Reihenfolge, Einstellungen wie Sprache). Also: alle Geräte auf 1.0 bringen.

@@ -171,10 +171,12 @@ sodium.ready.then(() => {
   for (let i = 0; i < 500; i++) { menge.add(V.generatePassword({ length: 16 })); }
   ok('500 Passwörter, alle verschieden', menge.size === 500, menge.size + ' verschieden');
 
-  /* Prüft, dass kein Zeichen des Alphabets systematisch bevorzugt wird. */
+  /* Prüft, dass kein Zeichen des Alphabets systematisch bevorzugt wird.
+   * 2000 Stichproben: bei 400 lag das Zufallsrauschen so nah an der Schwelle,
+   * dass der Test etwa jedes siebte Mal grundlos anschlug (v1.0). */
   const zaehler = Object.create(null);
   let gesamt = 0;
-  for (let i = 0; i < 400; i++) {
+  for (let i = 0; i < 2000; i++) {
     for (const ch of V.generatePassword({ length: 32, zeichen: true })) {
       zaehler[ch] = (zaehler[ch] || 0) + 1; gesamt++;
     }
@@ -433,10 +435,11 @@ sodium.ready.then(() => {
   ok('Ein generierter Merksatz wird gut bewertet', V.ratePassword(V.generatePassphrase({ words: 7 })).stufe >= 3);
 
   /* Gleichverteilung der Wortauswahl grob prüfen. Genug Ziehungen, damit die
-   * natürliche Streuung klein wird: rund 80 Treffer je Wort im Schnitt. */
+   * natürliche Streuung klein wird: rund 400 Treffer je Wort im Schnitt (v1.0;
+   * bei 80 schlug der Test durch reines Rauschen gelegentlich an). */
   const wc = Object.create(null);
   let wg = 0;
-  const ziehungen = V.wortZahl() * 80;
+  const ziehungen = V.wortZahl() * 400;
   for (let i = 0; i < ziehungen / 10; i++) {
     V.generatePassphrase({ words: 10, zahl: false, caps: false }).split('-').forEach(w => { wc[w] = (wc[w] || 0) + 1; wg++; });
   }
@@ -489,6 +492,175 @@ sodium.ready.then(() => {
   /* Der Zettel darf NIE ein Passwort enthalten. */
   const nzText = JSON.stringify(nz).toLowerCase();
   ok('Notfallzettel enthält kein Passwortfeld', nzText.indexOf('"pass"') < 0 && nzText.indexOf('geheim') < 0);
+
+  /* ==================================================== v1.0 */
+
+  /* ---------------------------------------------------- Fehlerkennungen */
+  let code = null;
+  try { V.readHeader(new Uint8Array(100)); } catch (e) { code = e.code; }
+  ok('v1.0: fremde Datei hat die Kennung "fremd"', code === 'fremd');
+  code = null;
+  try { V.decrypt(V.encrypt(V.emptyVault('x'), 'richtig', SCHNELL), 'falsch'); } catch (e) { code = e.code; }
+  ok('v1.0: falsches Passwort hat die Kennung "passwort"', code === 'passwort');
+
+  /* ---------------------------------------------------- Neue Felder, Rundlauf */
+  const n1 = V.emptyVault('Neu');
+  const reich = V.newItem({
+    title: 'Bank', url: 'https://bank.at', user: 'anna', pass: 'Start-Passwort-1',
+    urls: [{ label: 'App-Login', url: 'https://login.bank.at' }, { label: 'leer', url: '' }],
+    tags: ['Geld', '#geld', ' Familie ', ''],
+    fields: [{ label: 'PIN', value: '1234', hidden: true }, { label: 'Kundennummer', value: 'K-77' }, { label: '', value: '' }],
+    emoji: '🏦', color: 'moos'
+  });
+  n1.items.push(reich);
+  n1.items.push(V.newItem({ title: 'Schlicht', url: 'https://schlicht.at' }));
+  ok('v1.0: leere Zusatzadresse wird verworfen', reich.urls.length === 1 && reich.urls[0].label === 'App-Login');
+  ok('v1.0: Schlagwörter ohne #, ohne Doppelte, getrimmt', reich.tags.join('|') === 'Geld|Familie', reich.tags.join('|'));
+  ok('v1.0: leeres Zusatzfeld wird verworfen', reich.fields.length === 2);
+  ok('v1.0: Emoji bleibt', reich.emoji === '🏦');
+  ok('v1.0: Passwort bekommt ein Änderungsdatum', !!reich.passChangedAt);
+  const n1b = V.decrypt(V.encrypt(n1, 'pw', SCHNELL), 'pw').data;
+  const r2 = n1b.items[0];
+  ok('v1.0: Zusatzadressen überleben den Rundlauf', r2.urls.length === 1 && r2.urls[0].url === 'https://login.bank.at');
+  ok('v1.0: Schlagwörter überleben den Rundlauf', r2.tags.length === 2);
+  ok('v1.0: verborgenes Zusatzfeld bleibt verborgen', r2.fields[0].hidden === true && r2.fields[0].value === '1234');
+  ok('v1.0: offenes Zusatzfeld bleibt offen', r2.fields[1].hidden === false);
+  ok('v1.0: Farbe und Emoji überleben', r2.color === 'moos' && r2.emoji === '🏦');
+  const s2 = n1b.items[1];
+  ok('v1.0: schlichte Karte bekommt leere Standardwerte', Array.isArray(s2.urls) && s2.urls.length === 0 && s2.tags.length === 0 && s2.fields.length === 0 && s2.history.length === 0 && s2.emoji === '' && s2.order === 0);
+  ok('v1.0: Karte ohne Passwort hat kein Änderungsdatum', s2.passChangedAt === null);
+
+  /* Leere Felder landen nicht in der Datei (klein wie v0.4). */
+  const roh = JSON.stringify(V.sanitize(n1));
+  ok('v1.0: sanitize liefert alle Felder', roh.indexOf('"history"') >= 0);
+
+  /* Eine v0.4-Karte (ohne neue Felder) öffnet sich. */
+  const alt04 = V.sanitize({ name: 'Alt', categories: [], items: [{ id: 'a1', title: 'Alt', url: 'x.at', user: 'u', pass: 'p', createdAt: '2025-01-01T00:00:00.000Z' }] });
+  ok('v1.0: v0.4-Karte bekommt Standardfelder', alt04.items[0].tags.length === 0 && alt04.items[0].passChangedAt === null);
+
+  /* Unfug in den neuen Feldern wird verworfen. */
+  const unfug = V.sanitize({ items: [{ id: 'u', title: 'U', urls: 'nein', tags: [1, null, 'ok'], fields: [null, 5, { label: 'x', value: 'y', hidden: 'ja' }], history: [{ pass: 7 }, { pass: 'alt', until: 3 }], emoji: 42, color: 'lila', order: 'eins' }] }).items[0];
+  ok('v1.0: Unfug in urls → leer', unfug.urls.length === 0);
+  ok('v1.0: Unfug in tags → nur Text bleibt', unfug.tags.length === 1 && unfug.tags[0] === 'ok');
+  ok('v1.0: Unfug in fields → nur gültige bleiben', unfug.fields.length === 1 && unfug.fields[0].hidden === true);
+  ok('v1.0: Unfug in history → nur Text-Passwörter bleiben', unfug.history.length === 1 && unfug.history[0].pass === 'alt' && unfug.history[0].until === null);
+  ok('v1.0: Unfug in emoji/color/order → Standard', unfug.emoji === '' && unfug.color === '' && unfug.order === 0);
+  const vielTags = V.sanitizeEmoji('🏦🏦🏦 und Text');
+  ok('v1.0: Emoji auf ein Zeichen begrenzt', vielTags === '🏦', vielTags);
+
+  /* ---------------------------------------------------- Passwortverlauf */
+  const hv = V.newItem({ title: 'H', pass: 'eins' });
+  ok('v1.0: setPassword meldet Änderung', V.setPassword(hv, 'zwei', '2026-01-01T00:00:00.000Z') === true);
+  ok('v1.0: altes Passwort landet im Verlauf', hv.history.length === 1 && hv.history[0].pass === 'eins' && hv.history[0].until === '2026-01-01T00:00:00.000Z');
+  ok('v1.0: Änderungsdatum wird gesetzt', hv.passChangedAt === '2026-01-01T00:00:00.000Z');
+  ok('v1.0: gleiches Passwort ist keine Änderung', V.setPassword(hv, 'zwei') === false && hv.history.length === 1);
+  for (let i = 0; i < 15; i++) { V.setPassword(hv, 'pw' + i); }
+  ok('v1.0: Verlauf hat höchstens zehn Einträge', hv.history.length === V.MAX_HISTORY);
+  ok('v1.0: jüngstes zuerst', hv.history[0].pass === 'pw13');
+  V.setPassword(hv, '');
+  ok('v1.0: Passwort entfernen löscht das Änderungsdatum', hv.passChangedAt === null && hv.pass === '');
+
+  /* ---------------------------------------------------- Passwortalter */
+  const av1 = V.newItem({ title: 'A', pass: 'x' });
+  av1.passChangedAt = '2025-01-01T00:00:00.000Z';
+  ok('v1.0: Alter in Tagen', V.passwordAgeDays(av1, '2025-01-31T00:00:00.000Z') === 30);
+  ok('v1.0: ohne Passwort kein Alter', V.passwordAgeDays(V.newItem({ title: 'B' })) === null);
+  const av2 = V.newItem({ title: 'C', pass: 'x' }); av2.passChangedAt = null; av2.createdAt = '2025-01-01T00:00:00.000Z';
+  ok('v1.0: ohne Änderungsdatum zählt die Anlage', V.passwordAgeDays(av2, '2025-01-11T00:00:00.000Z') === 10);
+
+  /* ---------------------------------------------------- Kassensturz v1.0 */
+  const kv = V.emptyVault('K');
+  const altKarte = V.newItem({ title: 'Uralt', url: 'https://alt.at', pass: 'Sehr-Starkes-Passwort-99!' });
+  altKarte.passChangedAt = '2020-01-01T00:00:00.000Z';
+  kv.items.push(altKarte);
+  kv.items.push(V.newItem({ title: 'Ohne TLS', url: 'http://unsicher.at', pass: 'Noch-Ein-Starkes-Passwort-7' }));
+  kv.items.push(V.newItem({ title: 'Frisch', url: 'https://frisch.at', pass: 'Ganz-Frisches-Starkes-Pw-3' }));
+  const ka = V.audit(kv, '2026-09-27T00:00:00.000Z');
+  ok('v1.0: Kassensturz findet das alte Passwort', ka.alt.length === 1 && ka.alt[0].title === 'Uralt');
+  ok('v1.0: Kassensturz findet http-Adressen', ka.unsicher.length === 1 && ka.unsicher[0].title === 'Ohne TLS');
+  ok('v1.0: Aufgaben werden gezählt', ka.aufgaben === 2);
+  ok('v1.0: Note sinkt entsprechend', ka.note === 33, String(ka.note));
+  kv.settings.maxAgeMonths = 0;
+  ok('v1.0: Altersprüfung abschaltbar', V.audit(kv, '2026-09-27T00:00:00.000Z').alt.length === 0);
+
+  /* ---------------------------------------------------- Suche v1.0 */
+  const sv1 = V.emptyVault('S');
+  const sa = V.newItem({ title: 'Alpha', url: 'https://alpha.at', tags: ['Arbeit'], fields: [{ label: 'PIN', value: '9876', hidden: true }, { label: 'Kunde', value: 'K-555' }], urls: [{ label: 'Portal', url: 'https://portal.alpha.at' }] });
+  const sb = V.newItem({ title: 'Beta', url: 'https://beta.at', tags: ['Privat'] });
+  sv1.items.push(sa, sb);
+  ok('v1.0: Suche nach Schlagwort mit #', V.search(sv1, '#arbeit').length === 1);
+  ok('v1.0: Filter nach Schlagwort', V.search(sv1, '', null, false, 'name', 'privat').map(i => i.title).join() === 'Beta');
+  ok('v1.0: Suche findet Zusatzadresse', V.search(sv1, 'portal').length === 1);
+  ok('v1.0: Suche findet offenes Zusatzfeld', V.search(sv1, 'K-555').length === 1);
+  ok('v1.0: Suche findet verborgenes Zusatzfeld NICHT', V.search(sv1, '9876').length === 0);
+  ok('v1.0: mehrere Suchwörter in beliebiger Reihenfolge', V.search(sv1, 'portal alpha').length === 1 && V.search(sv1, 'alpha privat').length === 0);
+
+  /* ---------------------------------------------------- Schlagwörter */
+  sv1.items.push(V.newItem({ title: 'Gamma', tags: ['arbeit', 'Zebra'] }));
+  const tl = V.allTags(sv1);
+  ok('v1.0: allTags zählt ohne Groß/klein', tl.find(t => t.tag.toLowerCase() === 'arbeit').count === 2);
+  ok('v1.0: allTags alphabetisch', tl.map(t => t.tag.toLowerCase()).join() === 'arbeit,privat,zebra');
+  ok('v1.0: parseTags trennt an Komma', V.parseTags('a, b;#c\nb').join('|') === 'a|b|c');
+  ok('v1.0: Leerzeichen vor # stört nicht', V.parseTags('Arbeit, #Familie').join('|') === 'Arbeit|Familie');
+
+  /* ---------------------------------------------------- Eigene Reihenfolge */
+  const ov = [V.newItem({ title: 'A' }), V.newItem({ title: 'B' }), V.newItem({ title: 'C' })];
+  ok('v1.0: moveInList verschiebt', V.moveInList(ov, 0, 2) === true);
+  const nachOrder = ov.slice().sort((a, b) => a.order - b.order).map(i => i.title).join('');
+  ok('v1.0: Reihenfolge danach B, C, A', nachOrder === 'BCA', nachOrder);
+  ok('v1.0: moveInList außerhalb der Grenzen tut nichts', V.moveInList(ov, 0, 5) === false);
+  ok('v1.0: Sortierung "eigen" folgt der Reihenfolge', V.sortieren(ov.slice(), 'eigen').map(i => i.title).join('') === 'BCA');
+  ov[1].fav = true;
+  ok('v1.0: bei "eigen" gehen Favoriten nicht automatisch vor', V.sortieren(ov.slice(), 'eigen').map(i => i.title).join('') === 'BCA');
+
+  /* ---------------------------------------------------- Zuletzt geöffnet */
+  const rv = V.emptyVault('R');
+  const r1 = V.newItem({ title: 'Eins' }); r1.usedAt = '2026-01-02T00:00:00.000Z';
+  const r2b = V.newItem({ title: 'Zwei' }); r2b.usedAt = '2026-01-03T00:00:00.000Z';
+  const r3 = V.newItem({ title: 'Nie' });
+  const r4 = V.newItem({ title: 'Weg' }); r4.usedAt = '2026-01-04T00:00:00.000Z'; r4.deletedAt = '2026-01-05T00:00:00.000Z';
+  rv.items.push(r1, r2b, r3, r4);
+  ok('v1.0: zuletzt geöffnet, jüngste zuerst, ohne Papierkorb', V.recentlyUsed(rv, 5).map(i => i.title).join() === 'Zwei,Eins');
+
+  /* ---------------------------------------------------- Sicherungskopie */
+  const bv = V.emptyVault('B');
+  bv.createdAt = '2026-01-01T00:00:00.000Z';
+  ok('v1.0: leerer Tresor braucht keine Sicherung', V.backupFaellig(bv, '2026-09-01T00:00:00.000Z').faellig === false);
+  bv.items.push(V.newItem({ title: 'x' }));
+  ok('v1.0: nie gesichert und alt → fällig', V.backupFaellig(bv, '2026-09-01T00:00:00.000Z').faellig === true);
+  bv.settings.lastBackupAt = '2026-08-25T00:00:00.000Z';
+  const bf = V.backupFaellig(bv, '2026-09-01T00:00:00.000Z');
+  ok('v1.0: vor 7 Tagen gesichert → nicht fällig', bf.faellig === false && bf.tage === 7);
+  bv.settings.backupDays = 0;
+  ok('v1.0: Erinnerung abschaltbar', V.backupFaellig(bv, '2027-09-01T00:00:00.000Z').faellig === false);
+
+  /* ---------------------------------------------------- Einstellungen v1.0 */
+  const st = V.sanitizeSettings({ lang: 'en', theme: 'dunkel', view: 'liste', maxAgeMonths: 6, backupDays: 7, lastBackupAt: '2026-01-01T00:00:00.000Z' });
+  ok('v1.0: Einstellungen übernehmen gültige Werte', st.lang === 'en' && st.theme === 'dunkel' && st.view === 'liste' && st.maxAgeMonths === 6 && st.backupDays === 7 && st.lastBackupAt);
+  const stU = V.sanitizeSettings({ lang: 'fr', theme: 'pink', view: 'x', maxAgeMonths: 5, backupDays: 1, lastBackupAt: 'gestern' });
+  ok('v1.0: Unfug in Einstellungen → Standard', stU.lang === 'de' && stU.theme === 'auto' && stU.view === 'kacheln' && stU.maxAgeMonths === 12 && stU.backupDays === 30 && stU.lastBackupAt === null);
+
+  /* ---------------------------------------------------- Lesezeichen-Export */
+  const ev = V.emptyVault('Export');
+  const ekat = V.newCategory('Banken & Co', 'moos'); ev.categories.push(ekat);
+  ev.items.push(V.newItem({ title: 'Ohne Reiter', url: 'https://ohne.at' }));
+  ev.items.push(V.newItem({ title: 'Bank <b>', url: 'https://bank.at', user: 'geheimuser', pass: 'GEHEIMPASS', note: 'GEHEIMNOTIZ', cat: ekat.id, fields: [{ label: 'PIN', value: 'GEHEIMPIN' }], urls: [{ label: 'App', url: 'https://app.bank.at' }] }));
+  ev.items.push(V.newItem({ title: 'Böse', url: 'javascript:alert(1)' }));
+  const html = V.exportBookmarksHtml(ev);
+  ok('v1.0: Export ist ein Netscape-Lesezeichen', html.indexOf('<!DOCTYPE NETSCAPE-Bookmark-file-1>') === 0);
+  ok('v1.0: Export enthält KEINE Zugangsdaten', ['geheimuser', 'GEHEIMPASS', 'GEHEIMNOTIZ', 'GEHEIMPIN'].every(x => html.indexOf(x) < 0));
+  ok('v1.0: Export maskiert HTML im Titel', html.indexOf('Bank &lt;b&gt;') >= 0 && html.indexOf('Banken &amp; Co') >= 0);
+  ok('v1.0: Export lässt javascript: weg', html.indexOf('javascript') < 0);
+  ok('v1.0: Export nimmt Zusatzadressen mit', html.indexOf('https://app.bank.at/') >= 0);
+  const zurueck = V.importBookmarks(html);
+  ok('v1.0: eigener Export lässt sich wieder importieren', zurueck.items.length === 3, String(zurueck.items.length));
+  ok('v1.0: Ordner wird beim Rückimport wieder Reiter', zurueck.categories.length === 1 && zurueck.categories[0].name === 'Banken & Co');
+  const ohneR = zurueck.items.find(i => i.title === 'Ohne Reiter');
+  ok('v1.0: Karte ohne Reiter bleibt ohne Reiter', ohneR && ohneR.cat === null);
+
+  /* ---------------------------------------------------- Notfallzettel englisch */
+  const nzEn = V.notfallText(V.emptyVault('Family'), {}, 'en');
+  ok('v1.0: Notfallzettel auf Englisch', nzEn.warnung.indexOf('no recovery') >= 0 && nzEn.schritte.length === 3);
 
   /* ---------------------------------------------------- Ergebnis */
 

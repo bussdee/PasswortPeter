@@ -149,6 +149,14 @@
 
   function nowIso() { return new Date().toISOString(); }
 
+  /* Fehler mit Kennung. Der deutsche Text bleibt die Meldung, die Oberfläche
+   * übersetzt anhand der Kennung (v1.0: zweite Sprache). */
+  function fehler(code, text) {
+    var e = new Error(text);
+    e.code = code;
+    return e;
+  }
+
   /* --------------------------------------------------------- Datenmodell */
 
   var CATEGORY_COLORS = ['rost', 'moos', 'tinte', 'messing', 'pflaume', 'schiefer', 'ziegel', 'salbei'];
@@ -188,8 +196,94 @@
       createdAt: nowIso(),
       updatedAt: nowIso(),
       usedAt: null,
-      deletedAt: null
+      deletedAt: null,
+      /* v1.0 */
+      urls: sanitizeUrls(f.urls),
+      tags: sanitizeTags(f.tags),
+      fields: sanitizeFields(f.fields),
+      history: [],
+      passChangedAt: f.pass ? nowIso() : null,
+      emoji: sanitizeEmoji(f.emoji),
+      color: CATEGORY_COLORS.indexOf(f.color) >= 0 ? f.color : '',
+      order: typeof f.order === 'number' && isFinite(f.order) ? f.order : 0
     };
+  }
+
+  /* ------------------------------------------- v1.0: Zusatzfelder prüfen
+   *
+   * Alles hier ist additiv. Eine v1.0-Datei öffnet sich in v0.4, die neuen
+   * Felder werden dort beim Prüfen verworfen. Umgekehrt bekommt eine alte
+   * Datei hier leere Standardwerte. */
+
+  var MAX_URLS = 10, MAX_TAGS = 20, MAX_FIELDS = 30, MAX_HISTORY = 10;
+
+  function str(x) { return typeof x === 'string' ? x : ''; }
+
+  function sanitizeUrls(roh) {
+    if (!Array.isArray(roh)) { return []; }
+    var out = [];
+    roh.forEach(function (u) {
+      if (out.length >= MAX_URLS || !u || typeof u !== 'object') { return; }
+      var url = str(u.url).trim().slice(0, 2000);
+      if (!url) { return; }
+      out.push({ label: str(u.label).trim().slice(0, 60), url: url });
+    });
+    return out;
+  }
+
+  /* Schlagwörter: getrimmt, ohne führendes #, ohne Doppelte (Groß/klein egal). */
+  function normTag(t) {
+    return str(t).trim().replace(/^#+/, '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  }
+
+  function sanitizeTags(roh) {
+    if (!Array.isArray(roh)) { return []; }
+    var gesehen = Object.create(null), out = [];
+    roh.forEach(function (t) {
+      var n = normTag(t);
+      if (!n || out.length >= MAX_TAGS) { return; }
+      var k = n.toLowerCase();
+      if (gesehen[k]) { return; }
+      gesehen[k] = true;
+      out.push(n);
+    });
+    return out;
+  }
+
+  function sanitizeFields(roh) {
+    if (!Array.isArray(roh)) { return []; }
+    var out = [];
+    roh.forEach(function (f) {
+      if (out.length >= MAX_FIELDS || !f || typeof f !== 'object') { return; }
+      var label = str(f.label).trim().slice(0, 60);
+      var value = str(f.value).slice(0, 4000);
+      if (!label && !value) { return; }
+      out.push({ label: label, value: value, hidden: !!f.hidden });
+    });
+    return out;
+  }
+
+  function sanitizeHistory(roh) {
+    if (!Array.isArray(roh)) { return []; }
+    var out = [];
+    roh.forEach(function (h) {
+      if (out.length >= MAX_HISTORY || !h || typeof h !== 'object') { return; }
+      if (typeof h.pass !== 'string' || !h.pass) { return; }
+      out.push({ pass: h.pass, until: str(h.until) || null });
+    });
+    return out;
+  }
+
+  /* Höchstens ein Zeichen-Cluster, etwa ein Emoji. Alles Längere ist kein
+   * Symbol mehr, sondern Text, und gehört in den Titel. */
+  function sanitizeEmoji(roh) {
+    var s = str(roh).trim();
+    if (!s) { return ''; }
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+      var it = new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s)[Symbol.iterator]().next();
+      return it.done ? '' : it.value.segment.slice(0, 16);
+    }
+    return Array.from(s).slice(0, 2).join('').slice(0, 16);
   }
 
   /* Ein Eintrag ohne Benutzer und ohne Passwort ist ein reines Lesezeichen. */
@@ -201,7 +295,7 @@
    * kommt, ist erst mal fremd, auch wenn die AEAD bestätigt, dass es echt ist. */
   function sanitize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-      throw new Error('Der Inhalt des Tresors ist kein gültiger Datensatz.');
+      throw fehler('inhalt', 'Der Inhalt des Tresors ist kein gültiger Datensatz.');
     }
     var v = emptyVault(typeof raw.name === 'string' ? raw.name : 'Tresor');
     v.createdAt = typeof raw.createdAt === 'string' ? raw.createdAt : nowIso();
@@ -228,7 +322,6 @@
       var id = typeof it.id === 'string' && it.id ? it.id : randomId();
       if (seenItem[id]) { return; }
       seenItem[id] = true;
-      var str = function (x) { return typeof x === 'string' ? x : ''; };
       v.items.push({
         id: id,
         cat: (typeof it.cat === 'string' && seenCat[it.cat]) ? it.cat : null,
@@ -241,11 +334,38 @@
         createdAt: str(it.createdAt) || nowIso(),
         updatedAt: str(it.updatedAt) || nowIso(),
         usedAt: str(it.usedAt) || null,
-        deletedAt: str(it.deletedAt) || null
+        deletedAt: str(it.deletedAt) || null,
+        urls: sanitizeUrls(it.urls),
+        tags: sanitizeTags(it.tags),
+        fields: sanitizeFields(it.fields),
+        history: sanitizeHistory(it.history),
+        passChangedAt: str(it.passChangedAt) || null,
+        emoji: sanitizeEmoji(it.emoji),
+        color: CATEGORY_COLORS.indexOf(it.color) >= 0 ? it.color : '',
+        order: typeof it.order === 'number' && isFinite(it.order) ? it.order : 0
       });
     });
 
     return v;
+  }
+
+  /* Leere v1.0-Felder werden nicht geschrieben. sanitize setzt sie beim Lesen
+   * wieder auf den Standard. Das hält die Datei so klein wie in v0.4. */
+  var V1_LEER = { urls: [], tags: [], fields: [], history: [], passChangedAt: null, emoji: '', color: '', order: 0 };
+
+  function kompakt(data) {
+    data.items = data.items.map(function (it) {
+      var out = {};
+      Object.keys(it).forEach(function (k) {
+        if (Object.prototype.hasOwnProperty.call(V1_LEER, k)) {
+          var leer = V1_LEER[k], v = it[k];
+          if (Array.isArray(leer) ? (Array.isArray(v) && v.length === 0) : v === leer) { return; }
+        }
+        out[k] = it[k];
+      });
+      return out;
+    });
+    return data;
   }
 
   /* ----------------------------------------------------------- Adressen */
@@ -305,7 +425,7 @@
     ]);
     if (head.length !== AD_LEN) { throw new Error('Innerer Fehler: Kopf hat die falsche Länge.'); }
 
-    var data = sanitize(vaultData);
+    var data = kompakt(sanitize(vaultData));
     data.updatedAt = nowIso();
     var plain = utf8Encode(JSON.stringify(data));
 
@@ -323,27 +443,27 @@
   function readHeader(bytes) {
     if (!(bytes instanceof Uint8Array)) { bytes = new Uint8Array(bytes); }
     if (bytes.length < HEADER_LEN + 16) {
-      throw new Error('Die Datei ist zu kurz für einen Tresor.');
+      throw fehler('kurz', 'Die Datei ist zu kurz für einen Tresor.');
     }
     for (var i = 0; i < MAGIC.length; i++) {
       if (bytes[i] !== MAGIC[i]) {
-        throw new Error('Das ist keine PasswortPeter-Datei.');
+        throw fehler('fremd', 'Das ist keine PasswortPeter-Datei.');
       }
     }
     var formatVersion = bytes[6];
     if (formatVersion !== FORMAT_VERSION) {
-      throw new Error('Diese Datei stammt aus Version ' + formatVersion + '. Dieses Programm kennt nur Version ' + FORMAT_VERSION + '.');
+      throw fehler('version', 'Diese Datei stammt aus Version ' + formatVersion + '. Dieses Programm kennt nur Version ' + FORMAT_VERSION + '.');
     }
     if (bytes[7] !== KDF_ARGON2ID) {
-      throw new Error('Unbekanntes Verfahren zur Schlüsselableitung.');
+      throw fehler('kdf-unbekannt', 'Unbekanntes Verfahren zur Schlüsselableitung.');
     }
     var ops = readU32be(bytes, 8);
     var memKiB = readU32be(bytes, 12);
     if (ops < KDF_MIN.ops || memKiB < KDF_MIN.memKiB) {
-      throw new Error('Die Datei nennt zu schwache Parameter. Das sieht nach Manipulation aus.');
+      throw fehler('kdf-schwach', 'Die Datei nennt zu schwache Parameter. Das sieht nach Manipulation aus.');
     }
     if (ops > 64 || memKiB > 2 * 1024 * 1024) {
-      throw new Error('Die Datei nennt unsinnig hohe Parameter. Das sieht nach Manipulation aus.');
+      throw fehler('kdf-hoch', 'Die Datei nennt unsinnig hohe Parameter. Das sieht nach Manipulation aus.');
     }
     return {
       formatVersion: formatVersion,
@@ -364,7 +484,7 @@
     try {
       plain = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(null, h.cipher, h.ad, h.nonce, key);
     } catch (e) {
-      throw new Error('Falsches Master-Passwort, oder die Datei ist beschädigt.');
+      throw fehler('passwort', 'Falsches Master-Passwort, oder die Datei ist beschädigt.');
     } finally {
       sodium.memzero(key);
     }
@@ -378,7 +498,7 @@
     try {
       raw = JSON.parse(text);
     } catch (e) {
-      throw new Error('Der Tresor ließ sich öffnen, aber sein Inhalt ist unlesbar.');
+      throw fehler('unlesbar', 'Der Tresor ließ sich öffnen, aber sein Inhalt ist unlesbar.');
     }
     return { data: sanitize(raw), kdf: { ops: h.ops, memKiB: h.memKiB } };
   }
@@ -459,14 +579,34 @@
 
   /* ---------------------------------------------------------- Suche */
 
-  function search(vaultData, query, catId, onlyFav, sortMode) {
+  /* Durchsuchbarer Text einer Karte. Verborgene Zusatzfelder (etwa eine PIN)
+   * sind bewusst NICHT dabei, sonst ließe sich ihr Inhalt über die Suche
+   * erraten, ohne sie aufzudecken. Passwörter natürlich auch nicht. */
+  function suchText(it) {
+    var teile = [it.title, it.url, it.user, it.note];
+    (it.urls || []).forEach(function (u) { teile.push(u.label, u.url); });
+    (it.tags || []).forEach(function (t) { teile.push('#' + t); });
+    (it.fields || []).forEach(function (f) { teile.push(f.label); if (!f.hidden) { teile.push(f.value); } });
+    return teile.join(' ').toLowerCase();
+  }
+
+  function hatTag(it, tag) {
+    var k = String(tag || '').toLowerCase();
+    return (it.tags || []).some(function (t) { return t.toLowerCase() === k; });
+  }
+
+  function search(vaultData, query, catId, onlyFav, sortMode, tag) {
     var q = String(query || '').trim().toLowerCase();
+    var woerter = q ? q.split(/\s+/) : [];
     var items = vaultData.items.filter(function (it) {
       if (it.deletedAt) { return false; }
       if (catId && it.cat !== catId) { return false; }
       if (onlyFav && !it.fav) { return false; }
-      if (!q) { return true; }
-      return (it.title + ' ' + it.url + ' ' + it.user + ' ' + it.note).toLowerCase().indexOf(q) >= 0;
+      if (tag && !hatTag(it, tag)) { return false; }
+      if (!woerter.length) { return true; }
+      var text = suchText(it);
+      /* Jedes Wort muss vorkommen, egal in welcher Reihenfolge. */
+      return woerter.every(function (w) { return text.indexOf(w) >= 0; });
     });
     sortieren(items, sortMode);
     return items;
@@ -478,6 +618,14 @@
         if (a.fav !== b.fav) { return a.fav ? -1 : 1; }
         var au = a.usedAt || '', bu = b.usedAt || '';
         if (au !== bu) { return au < bu ? 1 : -1; }
+        return a.title.localeCompare(b.title, 'de', { sensitivity: 'base' });
+      });
+    } else if (sortMode === 'eigen') {
+      /* Eigene Reihenfolge heißt wirklich eigene: hier gehen Favoriten nicht
+       * automatisch vor, sonst ließe sich eine Karte nicht vor einen Favoriten
+       * schieben. */
+      items.sort(function (a, b) {
+        if ((a.order || 0) !== (b.order || 0)) { return (a.order || 0) - (b.order || 0); }
         return a.title.localeCompare(b.title, 'de', { sensitivity: 'base' });
       });
     } else if (sortMode === 'neu') {
@@ -511,8 +659,9 @@
    * in Frage. Was hier auffällt, fällt allein aus den Daten im Tresor auf:
    * mehrfach benutzte und rechnerisch schwache Passwörter.
    */
-  function audit(vaultData) {
+  function audit(vaultData, jetzt) {
     var lebend = vaultData.items.filter(function (it) { return !it.deletedAt && it.pass; });
+    var settings = sanitizeSettings(vaultData.settings);
 
     var nachPass = Object.create(null);
     lebend.forEach(function (it) {
@@ -528,9 +677,27 @@
     var schwach = lebend.filter(function (it) { return ratePassword(it.pass).stufe <= 1; });
     schwach.sort(function (a, b) { return passwordBits(a.pass) - passwordBits(b.pass); });
 
+    /* v1.0: alte Passwörter (nach der Einstellung im Tresor) und Zugänge,
+     * deren Adresse unverschlüsselt (http) ist. */
+    var alt = [];
+    if (settings.maxAgeMonths > 0) {
+      var grenzeTage = settings.maxAgeMonths * 30.44;
+      alt = lebend.filter(function (it) {
+        var tage = passwordAgeDays(it, jetzt);
+        return tage !== null && tage >= grenzeTage;
+      });
+      alt.sort(function (a, b) { return passwordAgeDays(b, jetzt) - passwordAgeDays(a, jetzt); });
+    }
+    var unsicher = lebend.filter(function (it) {
+      var href = safeUrl(it.url);
+      return !!href && href.indexOf('http:') === 0;
+    });
+
     var betroffen = Object.create(null);
     doppelt.forEach(function (gr) { gr.forEach(function (it) { betroffen[it.id] = true; }); });
     schwach.forEach(function (it) { betroffen[it.id] = true; });
+    alt.forEach(function (it) { betroffen[it.id] = true; });
+    unsicher.forEach(function (it) { betroffen[it.id] = true; });
 
     var mitPass = lebend.length;
     var sauber = mitPass - Object.keys(betroffen).length;
@@ -540,6 +707,9 @@
       mitPasswort: mitPass,
       doppelt: doppelt,
       schwach: schwach,
+      alt: alt,
+      unsicher: unsicher,
+      aufgaben: doppelt.length + schwach.length + alt.length + unsicher.length,
       betroffen: Object.keys(betroffen).length,
       note: note
     };
@@ -812,8 +982,19 @@
    * die Autosperre, die KDF-Stärke die nächste Speicherung. */
   var AUTO_LOCK_WERTE = [1, 5, 15, 30, 0];   // Minuten, 0 = nie
 
+  var MAX_AGE_WERTE = [0, 6, 12, 24];       // Monate, 0 = aus
+  var BACKUP_WERTE = [0, 7, 30, 90];        // Tage, 0 = aus
+  var SPRACHEN = ['de', 'en'];
+  var THEMEN = ['auto', 'hell', 'dunkel'];
+  var ANSICHTEN = ['kacheln', 'liste'];
+
   function defaultSettings() {
-    return { autoLockMin: 5, kdf: 'standard' };
+    return {
+      autoLockMin: 5, kdf: 'standard',
+      /* v1.0 */
+      lang: 'de', theme: 'auto', view: 'kacheln',
+      maxAgeMonths: 12, backupDays: 30, lastBackupAt: null
+    };
   }
 
   function kdfVon(name) {
@@ -827,6 +1008,12 @@
     if (roh && typeof roh === 'object') {
       if (AUTO_LOCK_WERTE.indexOf(roh.autoLockMin) >= 0) { s.autoLockMin = roh.autoLockMin; }
       if (['sparsam', 'standard', 'streng'].indexOf(roh.kdf) >= 0) { s.kdf = roh.kdf; }
+      if (SPRACHEN.indexOf(roh.lang) >= 0) { s.lang = roh.lang; }
+      if (THEMEN.indexOf(roh.theme) >= 0) { s.theme = roh.theme; }
+      if (ANSICHTEN.indexOf(roh.view) >= 0) { s.view = roh.view; }
+      if (MAX_AGE_WERTE.indexOf(roh.maxAgeMonths) >= 0) { s.maxAgeMonths = roh.maxAgeMonths; }
+      if (BACKUP_WERTE.indexOf(roh.backupDays) >= 0) { s.backupDays = roh.backupDays; }
+      if (typeof roh.lastBackupAt === 'string' && !isNaN(Date.parse(roh.lastBackupAt))) { s.lastBackupAt = roh.lastBackupAt; }
     }
     return s;
   }
@@ -843,7 +1030,21 @@
    * Diese Funktion liefert nur die Textbausteine, das Aussehen macht die
    * Oberfläche.
    */
-  function notfallText(vaultData, ort) {
+  function notfallText(vaultData, ort, lang) {
+    if (lang === 'en') {
+      return {
+        tresor: String(vaultData.name || 'Vault'),
+        datum: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }),
+        programmOrt: String((ort && ort.programm) || ''),
+        dateiOrt: String((ort && ort.datei) || ''),
+        schritte: [
+          'Open the file PasswortPeter.html in a browser (double-click).',
+          'Drag the vault file (ends in .peter) into the window.',
+          'Enter the master password written above.'
+        ],
+        warnung: 'There is no recovery. Without this password the vault stays locked forever. Keep this sheet like an important document.'
+      };
+    }
     return {
       tresor: String(vaultData.name || 'Tresor'),
       datum: new Date().toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' }),
@@ -852,10 +1053,139 @@
       schritte: [
         'Die Datei PasswortPeter.html im Browser öffnen (Doppelklick).',
         'Die Tresordatei (endet auf .peter) in das Fenster ziehen.',
-        'Das unten eingetragene Master-Passwort eingeben.'
+        'Das oben eingetragene Master-Passwort eingeben.'
       ],
       warnung: 'Es gibt keine Wiederherstellung. Ohne dieses Passwort ist der Tresor für immer verschlossen. Diesen Zettel wie ein wichtiges Dokument aufbewahren.'
     };
+  }
+
+  /* ------------------------------------------------ v1.0: Passwortverlauf
+   *
+   * Wird ein Passwort ersetzt, wandert das alte in den Verlauf. Wer sich nach
+   * einer Änderung auf einer Website doch noch mit dem alten anmelden muss,
+   * findet es dort. Höchstens zehn, das jüngste zuerst. */
+  function setPassword(item, neu, jetzt) {
+    var zeit = jetzt || nowIso();
+    neu = String(neu || '');
+    if (neu === item.pass) { return false; }
+    if (!Array.isArray(item.history)) { item.history = []; }
+    if (item.pass) {
+      item.history.unshift({ pass: item.pass, until: zeit });
+      if (item.history.length > MAX_HISTORY) { item.history.length = MAX_HISTORY; }
+    }
+    item.pass = neu;
+    item.passChangedAt = neu ? zeit : null;
+    return true;
+  }
+
+  /* Alter des Passworts in Tagen. Ohne eigenes Änderungsdatum (alte Dateien)
+   * zählt das Anlagedatum der Karte. */
+  function passwordAgeDays(item, jetzt) {
+    if (!item.pass) { return null; }
+    var seit = Date.parse(item.passChangedAt || item.createdAt || '');
+    if (isNaN(seit)) { return null; }
+    var nun = jetzt ? Date.parse(jetzt) : Date.now();
+    return Math.max(0, Math.floor((nun - seit) / 86400000));
+  }
+
+  /* ------------------------------------------------ v1.0: Schlagwörter */
+  function allTags(vaultData) {
+    var zaehler = Object.create(null), name = Object.create(null);
+    vaultData.items.forEach(function (it) {
+      if (it.deletedAt) { return; }
+      (it.tags || []).forEach(function (t) {
+        var k = t.toLowerCase();
+        zaehler[k] = (zaehler[k] || 0) + 1;
+        if (!name[k]) { name[k] = t; }
+      });
+    });
+    return Object.keys(zaehler).map(function (k) { return { tag: name[k], count: zaehler[k] }; })
+      .sort(function (a, b) { return a.tag.localeCompare(b.tag, 'de', { sensitivity: 'base' }); });
+  }
+
+  function parseTags(text) {
+    return sanitizeTags(String(text || '').split(/[,;\n]+/));
+  }
+
+  /* ------------------------------------------------ v1.0: eigene Reihenfolge
+   *
+   * Verschiebt innerhalb einer angezeigten Liste und nummeriert sie neu. Die
+   * Nummern gelten relativ, also stört es nicht, dass Karten aus anderen
+   * Reitern dieselben Nummern tragen. */
+  function moveInList(liste, von, nach) {
+    if (von < 0 || von >= liste.length || nach < 0 || nach >= liste.length || von === nach) { return false; }
+    var neu = liste.slice();
+    var stueck = neu.splice(von, 1)[0];
+    neu.splice(nach, 0, stueck);
+    neu.forEach(function (it, i) { it.order = i; });
+    return true;
+  }
+
+  /* ------------------------------------------------ v1.0: zuletzt geöffnet */
+  function recentlyUsed(vaultData, anzahl) {
+    return vaultData.items.filter(function (it) { return !it.deletedAt && it.usedAt; })
+      .sort(function (a, b) { return a.usedAt < b.usedAt ? 1 : (a.usedAt > b.usedAt ? -1 : 0); })
+      .slice(0, anzahl || 8);
+  }
+
+  /* ------------------------------------------------ v1.0: Sicherungskopie
+   *
+   * Ohne Server gibt es kein Backup, außer man macht eines. Diese Prüfung
+   * erinnert daran, wenn die letzte Sicherungskopie zu lange her ist. */
+  function backupFaellig(vaultData, jetzt) {
+    var s = sanitizeSettings(vaultData.settings);
+    if (!s.backupDays) { return { faellig: false, tage: null, nie: !s.lastBackupAt }; }
+    var seit = Date.parse(s.lastBackupAt || vaultData.createdAt || '');
+    var nun = jetzt ? Date.parse(jetzt) : Date.now();
+    var tage = isNaN(seit) ? null : Math.floor((nun - seit) / 86400000);
+    var lebend = vaultData.items.some(function (it) { return !it.deletedAt; });
+    return { faellig: lebend && (tage === null || tage >= s.backupDays), tage: tage, nie: !s.lastBackupAt };
+  }
+
+  /* ------------------------------------------------ v1.0: Lesezeichen schreiben
+   *
+   * Das Netscape-Format, das jeder Browser importiert. Enthält NUR Titel und
+   * Adressen, nie Benutzer, Passwörter, Notizen oder Zusatzfelder. Reiter
+   * werden Ordner. Karten ohne Reiter stehen vorne, damit der eigene Import
+   * (importBookmarks) sie keinem Ordner zuschlägt. */
+  function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function exportBookmarksHtml(vaultData) {
+    var zeit = function (iso) { var t = Date.parse(iso || ''); return isNaN(t) ? '' : ' ADD_DATE="' + Math.floor(t / 1000) + '"'; };
+    var zeilen = function (it, einzug) {
+      var out = [];
+      var href = safeUrl(it.url);
+      if (href) { out.push(einzug + '<DT><A HREF="' + escHtml(href) + '"' + zeit(it.createdAt) + '>' + escHtml(it.title || hostOf(href)) + '</A>'); }
+      (it.urls || []).forEach(function (u) {
+        var h = safeUrl(u.url);
+        if (h) { out.push(einzug + '<DT><A HREF="' + escHtml(h) + '"' + zeit(it.createdAt) + '>' + escHtml((it.title || hostOf(h)) + (u.label ? ' – ' + u.label : '')) + '</A>'); }
+      });
+      return out;
+    };
+    var lebend = sortieren(vaultData.items.filter(function (it) { return !it.deletedAt; }), 'name');
+    var out = [
+      '<!DOCTYPE NETSCAPE-Bookmark-file-1>',
+      '<!-- PasswortPeter: nur Titel und Adressen, keine Zugangsdaten. -->',
+      '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">',
+      '<TITLE>Bookmarks</TITLE>',
+      '<H1>' + escHtml(vaultData.name || 'PasswortPeter') + '</H1>',
+      '<DL><p>'
+    ];
+    lebend.filter(function (it) { return !it.cat; }).forEach(function (it) { out = out.concat(zeilen(it, '    ')); });
+    vaultData.categories.slice().sort(function (a, b) { return a.order - b.order; }).forEach(function (c) {
+      var drin = lebend.filter(function (it) { return it.cat === c.id; });
+      if (!drin.length) { return; }
+      out.push('    <DT><H3>' + escHtml(c.name || '—') + '</H3>');
+      out.push('    <DL><p>');
+      drin.forEach(function (it) { out = out.concat(zeilen(it, '        ')); });
+      out.push('    </DL><p>');
+    });
+    out.push('</DL><p>');
+    return out.join('\n') + '\n';
   }
 
   var api = {
@@ -902,6 +1232,24 @@
     mergeImport: mergeImport,
     exportCsv: exportCsv,
     randomId: randomId,
+    /* v1.0 */
+    MAX_HISTORY: MAX_HISTORY,
+    MAX_AGE_WERTE: MAX_AGE_WERTE,
+    BACKUP_WERTE: BACKUP_WERTE,
+    SPRACHEN: SPRACHEN,
+    THEMEN: THEMEN,
+    ANSICHTEN: ANSICHTEN,
+    setPassword: setPassword,
+    passwordAgeDays: passwordAgeDays,
+    allTags: allTags,
+    parseTags: parseTags,
+    normTag: normTag,
+    hatTag: hatTag,
+    moveInList: moveInList,
+    recentlyUsed: recentlyUsed,
+    backupFaellig: backupFaellig,
+    exportBookmarksHtml: exportBookmarksHtml,
+    sanitizeEmoji: sanitizeEmoji,
     _utf8EncodeSelbst: utf8EncodeSelbst,
     _utf8DecodeSelbst: utf8DecodeSelbst
   };

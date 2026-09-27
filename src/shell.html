@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
 <title>PasswortPeter</title>
 
 <!-- Diese Zeile ist der Beweis, nicht das Versprechen.
@@ -19,14 +20,14 @@
 /* @@CSS@@ */
 </style>
 </head>
-<body>
+<body data-druck-hinweis="PasswortPeter druckt keine Tresore.">
 
 <!-- Ladeschirm, bis libsodium sein WebAssembly gestartet hat -->
-<section id="laedt" class="kasten">
-  <div class="kasten__mitte">
-    <p class="kasten__marke">PasswortPeter</p>
+<section id="laedt" class="schirm schirm--mitte">
+  <div class="tafel tafel--schmal">
+    <div class="marke"><span class="marke__logo" aria-hidden="true"></span><span class="marke__name">PasswortPeter</span></div>
     <div class="riegel"><div class="riegel__lauf"></div></div>
-    <p class="kasten__zeile" style="margin-top:1.25rem">Startet …</p>
+    <p class="leise" data-t="laden.startet">Startet …</p>
     <noscript>
       <div class="warnung">Ohne JavaScript geht hier nichts. Die ganze Verschlüsselung läuft im Browser.</div>
     </noscript>
@@ -34,64 +35,80 @@
 </section>
 
 <!-- Start -->
-<section id="s-start" class="kasten versteckt">
-  <div class="kasten__mitte">
-    <div id="start-siegel-halter"></div>
-    <h1 class="kasten__name">PasswortPeter</h1>
-    <p class="kasten__zeile">Ein Tresor ist eine Datei. Mehr braucht es nicht.</p>
+<section id="s-start" class="schirm schirm--mitte versteckt">
+  <div class="tafel">
+    <div class="tafel__kopf">
+      <div class="marke"><span class="marke__logo" aria-hidden="true"></span><span class="marke__name">PasswortPeter</span></div>
+      <div id="start-sprache" class="sprachwahl" role="group" data-t-aria="start.sprache" aria-label="Sprache"></div>
+    </div>
+    <h1 class="tafel__titel" data-t="start.titel">Deine Websites und Passwörter. In einer Datei.</h1>
+    <p class="tafel__unter" data-t="start.unter"></p>
 
     <div id="ablage" class="ablage" role="button" tabindex="0">
-      Tresordatei hierher ziehen<br><span style="font-size:.78rem;opacity:.75">oder klicken zum Auswählen</span>
+      <span class="ablage__symbol" aria-hidden="true"></span>
+      <strong data-t="start.ablage">Tresordatei hierher ziehen</strong>
+      <span class="ablage__unter" data-t="start.ablageUnter">oder klicken zum Auswählen</span>
     </div>
     <input id="b-datei" type="file" accept=".peter,application/octet-stream" class="nur-lesen" tabindex="-1">
 
-    <div class="knopf-reihe">
-      <button id="b-neuer-tresor" class="knopf knopf--leer">Neuen Tresor anlegen</button>
-    </div>
+    <button id="b-neuer-tresor" class="knopf knopf--weit" data-t="start.neu">Neuen Tresor anlegen</button>
 
     <div id="start-fehler" class="warnung versteckt" role="alert"></div>
 
-    <p class="kasten__fuss">
-      Nichts wird hochgeladen, nichts gespeichert, nichts nachgeladen.
-      Diese Datei funktioniert auf einem Stick ohne Internet genauso.
-      Was du siehst, liegt allein in diesem Fenster.
-    </p>
+    <ul class="fakten">
+      <li data-t="start.fakt1">Läuft komplett offline</li>
+      <li data-t="start.fakt2">Argon2id + XChaCha20-Poly1305</li>
+      <li data-t="start.fakt3">Kein Server, kein Konto</li>
+    </ul>
+    <p class="tafel__fuss" data-t="start.fuss"></p>
+    <p class="tafel__version" id="start-version"></p>
   </div>
 </section>
 
 <!-- Neuer Tresor -->
-<section id="s-neu" class="kasten versteckt">
-  <div id="neu-mitte" class="kasten__mitte"></div>
+<section id="s-neu" class="schirm schirm--mitte versteckt">
+  <div id="neu-mitte" class="tafel"></div>
 </section>
 
 <!-- Aufsperren -->
-<section id="s-auf" class="kasten versteckt">
-  <div id="auf-mitte" class="kasten__mitte"></div>
+<section id="s-auf" class="schirm schirm--mitte versteckt">
+  <div id="auf-mitte" class="tafel tafel--schmal"></div>
 </section>
 
-<!-- Die Kartei -->
+<!-- Der Tresor -->
 <section id="s-app" class="raum versteckt">
-  <header class="leiste">
-    <div id="leiste-siegel-halter"></div>
-    <span id="leiste-name" class="leiste__name"></span>
-    <span id="leiste-punkt" class="leiste__punkt" title="Ungespeicherte Änderungen"></span>
-    <span class="leiste__luft"></span>
-    <input id="suche" class="suche" type="search" placeholder="Suchen …  (/ oder Strg+K)" autocomplete="off" aria-label="Kartei durchsuchen">
-    <button id="b-sortieren" class="leiste__knopf" title="Sortierung umschalten">A–Z</button>
-    <button id="b-speichern" class="leiste__knopf leiste__knopf--wichtig">Speichern</button>
-    <button id="b-menue" class="leiste__knopf" title="Mehr" aria-label="Menü">···</button>
-    <button id="b-sperren" class="leiste__knopf">Zusperren</button>
-  </header>
-  <div class="inhalt">
-    <nav id="reiter" class="reiter" aria-label="Reiter"></nav>
-    <main class="kartei">
-      <div id="gitter" class="kartei__gitter"></div>
-    </main>
+  <aside id="seite" class="seite" data-t-aria="leiste.navigation" aria-label="Navigation">
+    <div class="seite__kopf">
+      <div id="leiste-siegel-halter" class="seite__siegel"></div>
+      <div class="seite__titel">
+        <span id="leiste-name" class="seite__name"></span>
+        <span id="leiste-status" class="seite__status"></span>
+      </div>
+    </div>
+    <nav id="nav" class="nav"></nav>
+  </aside>
+  <div id="nav-schleier" class="schleier versteckt"></div>
+
+  <div class="haupt">
+    <header class="leiste">
+      <button id="b-nav" class="symbolknopf nur-mobil" data-t-aria="leiste.navigation" aria-label="Navigation"></button>
+      <div class="suche">
+        <span class="suche__symbol" aria-hidden="true"></span>
+        <input id="suche" class="suche__feld" type="search" autocomplete="off" spellcheck="false" data-t-ph="leiste.suche" data-t-aria="leiste.sucheLabel" placeholder="Suchen …" aria-label="Tresor durchsuchen">
+        <kbd class="suche__kbd nur-breit" data-t="leiste.sucheHinweis">/ oder Strg+K</kbd>
+      </div>
+      <div class="leiste__tun">
+        <button id="b-speichern" class="knopf knopf--haupt knopf--klein"><span class="knopf__punkt" aria-hidden="true"></span><span id="b-speichern-text" data-t="leiste.speichern">Speichern</span></button>
+        <button id="b-sperren" class="symbolknopf" data-t-title="leiste.sperren" data-t-aria="leiste.sperren" title="Zusperren" aria-label="Zusperren"></button>
+        <button id="b-menue" class="symbolknopf" data-t-title="leiste.menue" data-t-aria="leiste.menue" title="Menü" aria-label="Menü"></button>
+      </div>
+    </header>
+    <div id="banner-halter" class="banner-halter"></div>
+    <main id="inhalt" class="inhalt"></main>
   </div>
-  <button id="b-neu-eintrag" class="plus">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-    Neue Karte
-  </button>
+
+  <div id="auswahl-leiste" class="auswahl-leiste versteckt" role="toolbar"></div>
+  <button id="b-neu-eintrag" class="plus"><span class="plus__symbol" aria-hidden="true"></span><span class="plus__text" data-t="leiste.neueKarte">Neue Karte</span></button>
 </section>
 
 <div id="vorhang-halter"></div>
@@ -103,6 +120,9 @@
 </script>
 <script>
 /* @@WRAPPERS@@ */
+</script>
+<script>
+/* @@I18N@@ */
 </script>
 <script>
 /* @@VAULT@@ */

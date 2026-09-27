@@ -1,6 +1,9 @@
 # Abhängigkeiten zum Testen (werden per npm install neu geholt)
 node_modules/
 
+# Bildschirmfotos und PDF aus test/test_browser.js, bei jedem Lauf neu
+test/ausgabe/
+
 # Nie versehentlich eine echte Tresordatei oder einen Klartext-Export einchecken.
 # Das ist eine Sicherheitsnetz-Regel, keine Formsache: dieses Repository ist nur
 # für den Quellcode gedacht, niemals für echte Zugangsdaten.
